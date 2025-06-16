@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Capacity Forecasting Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --primary-light: #60ad5e;
+            --primary-dark: #005005;
+            --text-color: #333;
+            --background-color: #f5f5f5;
+            --card-background: #ffffff;
+            --critical-color: #d32f2f;
+            --high-color: #f57c00;
+            --medium-color: #fbc02d;
+            --good-color: #388e3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #222;
+            background-color: #f7f8fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: none;
+            width: 100vw;
+            margin: 0 auto;
+            padding: 0 2vw;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 32px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px 28px 20px 28px;
+            box-shadow: 0 4px 24px rgba(30,34,90,0.07), 0 1.5px 4px rgba(30,34,90,0.04);
+            min-width: 0;
+            width: 100%;
+            margin-bottom: 24px;
+            transition: box-shadow 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 32px rgba(30,34,90,0.12), 0 2px 8px rgba(30,34,90,0.06);
+        }
+
+        h2, h3 {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .segment-inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px 24px;
+            margin-bottom: 0;
+        }
+        @media (max-width: 1100px) {
+            .segment-inputs-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 700px) {
+            .segment-inputs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 3px;
+        }
+        input[type="number"], input[type="text"] {
+            border-radius: 18px;
+            border: 1.5px solid #e0e3eb;
+            background: #f7f8fa;
+            font-size: 15px;
+            padding: 8px 14px;
+            box-shadow: 0 1px 2px rgba(30,34,90,0.03);
+            transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+            height: 38px;
+            outline: none;
+            width: 100%;
+            min-width: 60px;
+            max-width: 120px;
+            margin: 0;
+            color: #222;
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            border: 1.5px solid #1976d2;
+            background: #e3f2fd;
+            box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            appearance: textfield;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+            width: 100%;
+            min-width: 600px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--card-background);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .roadblock-analysis {
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .roadblock-header {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .roadblock-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .roadblock-item {
+            padding: 15px;
+            border-radius: 4px;
+            background: #f8f8f8;
+        }
+
+        .roadblock-item.critical { background-color: #ffebee; }
+        .roadblock-item.high { background-color: #fff3e0; }
+        .roadblock-item.medium { background-color: #fffde7; }
+        .roadblock-item.good { background-color: #e8f5e9; }
+
+        .forecast-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--card-background);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 600px;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(30,34,90,0.06);
+            background: #fff;
+        }
+
+        .forecast-table th,
+        .forecast-table td {
+            padding: 14px 12px;
+            text-align: center;
+            border-bottom: 1px solid #e0e3eb;
+            vertical-align: middle;
+        }
+
+        .forecast-table th {
+            background: #f7f8fa;
+            color: #222;
+            font-weight: 700;
+            font-size: 15px;
+            border-bottom: 2px solid #e0e3eb;
+            box-shadow: 0 2px 4px rgba(30,34,90,0.03);
+            letter-spacing: 0.2px;
+        }
+
+        .forecast-table .sticky-col {
+            position: sticky;
+            left: 0;
+            background: #e3e8f0;
+        }
+        .forecast-table th.sticky-col {
+            z-index: 3;
+            background: #e3e8f0;
+        }
+
+        .forecast-table tr {
+            transition: background 0.18s;
+        }
+        .forecast-table tr:nth-child(even) {
+            background: #f7f8fa;
+        }
+        .forecast-table tr:hover {
+            background: #e3e8f0;
+        }
+
+        .forecast-table th.ai-deflect,
+        .forecast-table td.ai-deflect,
+        .forecast-table th.chat-deflect,
+        .forecast-table td.chat-deflect {
+            min-width: 140px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .expander {
+            width: 100%;
+            text-align: left;
+            background: var(--primary-light);
+            color: #fff;
+            border: none;
+            padding: 12px 16px;
+            font-size: 18px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        .expander-content {
+            padding: 0 0 16px 0;
+        }
+
+        .max-allowed-row {
+            background: #e3f2fd;
+            border-top: 2px solid #90caf9;
+        }
+        .max-allowed-label {
+            color: #1976d2;
+            font-weight: bold;
+        }
+        .max-allowed-input {
+            width: 60px;
+            padding: 6px 8px;
+            border: 1.5px solid #90caf9;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 16px;
+            box-shadow: 0 1px 2px rgba(25, 118, 210, 0.05);
+            transition: border 0.2s;
+        }
+        .max-allowed-input:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+            background: #e3f2fd;
+        }
+
+        .tdcx-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            font-size: 14px;
+            padding: 3px 14px;
+            border-radius: 16px;
+            margin-left: 8px;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(25,118,210,0.07);
+            letter-spacing: 0.1px;
+            vertical-align: middle;
+        }
+
+        .impact-below {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+            font-size: 14px;
+            line-height: 1.3;
+            min-height: 22px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .tooltip-icon {
+            position: relative;
+            display: inline-block;
+            color: #1976d2;
+            font-size: 17px;
+            cursor: help;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .custom-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            width: 320px;
+            background: #222;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 10px 14px;
+            position: absolute;
+            z-index: 10;
+            bottom: -5px;
+            left: 50%;
+            transform: translate(-50%, 110%);
+            box-shadow: 0 4px 16px rgba(30,34,90,0.13);
+            font-size: 14px;
+            pointer-events: none;
+            transition: opacity 0.18s;
+        }
+        .tooltip-icon:hover .custom-tooltip,
+        .tooltip-icon:focus .custom-tooltip {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .superforecaster-title {
+            font-family: 'Montserrat', 'Arial Black', 'Inter', Arial, sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #222;
+            text-transform: uppercase;
+            /* border-bottom: 4px solid #ffe600; */
+            display: block;
+            text-align: center;
+            margin-bottom: 28px;
+            padding-bottom: 0;
+        }
+
+        /* Add or update CSS for centering */
+        .core-ftes-table th, .core-ftes-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .core-ftes-table input {
+            margin: 0 auto;
+            display: block;
+            text-align: center;
+        }
+        .core-ftes-table input[type="number"] {
+            text-align: center;
+        }
+
+        .cell-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            height: 100%;
+        }
+        .main-value {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 32px;
+            font-weight: 500;
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+        .main-value input.oval {
+            width: 48px;
+            height: 32px;
+            border-radius: 16px;
+            background: #f8f8f8;
+            font-weight: 500;
+            font-size: 1rem;
+            border: none;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(30,34,90,0.04);
+        }
+        .main-value.static {
+            background: #f8f8f8;
+            border-radius: 8px;
+            color: #444;
+        }
+        .impact-below {
+            font-size: 14px;
+            color: #888;
+            min-height: 18px;
+            margin-top: 2px;
+        }
+        /* Add to <style> section */
+        .forecast-table td.tdcx-tickets-cell,
+        .forecast-table th.tdcx-tickets-header {
+          min-width: 120px;
+          padding-right: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="font-style:italic;color:#222;font-size:2.8rem;">&gt;&gt;SUPERFORECASTER&lt;&lt;</h1>
+        </div>
+
+        <div class="grid">
+            <!-- Non-VIP Segment -->
+            <div class="card" id="nonvip-segment"></div>
+            <!-- VIP Segment -->
+            <div class="card" id="vip-segment"></div>
+        </div>
+
+        <div id="totalCoreFteTable"></div>
+    </div>
+
+    <script>
+        // Constants
+        const SEASONAL_MULTIPLIERS_NONVIP = [0.96, 1.01, 1.18, 1.09, 0.94, 0.95, 0.75, 0.94, 0.98, 0.98, 0.92, 0.75];
+        const SEASONAL_MULTIPLIERS_VIP = [1.05, 1.08, 1.22, 1.18, 1.05, 0.91, 0.79, 0.99, 1.04, 1.05, 0.95, 0.75];
+        const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const WORKING_DAYS_PER_MONTH = 22;
+        const HOURS_PER_DAY = 8;
+        const MINUTES_PER_HOUR = 60;
+        const TDCX_TICKETS_PER_DAY = 10;
+
+        // Store segment data
+        const SEGMENTS = [
+            {
+                key: 'nonvip',
+                name: 'Non-VIP',
+                color: '#2e7d32',
+                defaults: {
+                    teamSize: 13,
+                    tdcxTeamSize: 6,
+                    tdcxPercent: 30,
+                    baseCustomers: 13000,
+                    contactRate: 0.48,
+                    handleTime: 30,
+                    ticketsPerDay: 15,
+                    volumeGrowth: 75,
+                    handleTimeReduction: 0,
+                    aiDeflection: 0,
+                    chatDeflection: 0,
+                    occupancy: 100,
+                    handleTimeImprovement: 0
+                }
+            },
+            {
+                key: 'vip',
+                name: 'VIP',
+                color: '#1976d2',
+                defaults: {
+                    teamSize: 12,
+                    tdcxTeamSize: 0,
+                    tdcxPercent: 0,
+                    baseCustomers: 2000,
+                    contactRate: 1.2,
+                    handleTime: 75,
+                    ticketsPerDay: 7,
+                    volumeGrowth: 75,
+                    handleTimeReduction: 0,
+                    aiDeflection: 0,
+                    chatDeflection: 0,
+                    occupancy: 100,
+                    handleTimeImprovement: 0
+                }
+            }
+        ];
+
+        let segmentInputs = {
+            nonvip: { ...SEGMENTS[0].defaults },
+            vip: { ...SEGMENTS[1].defaults }
+        };
+        // Per-month FTE shift array (25 months)
+        let fteShiftByMonth = Array(25).fill(0);
+        let segmentCharts = { nonvip: null, vip: null };
+        // Add per-segment manual team size override arrays
+        let manualTeamSizeByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        // Add per-month max allowed FTEs array
+        let maxAllowedFteByMonth = Array(25).fill('');
+        // Add per-segment per-month override arrays for AI and Chat Deflection
+        let manualAiDeflectionByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        let manualChatDeflectionByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        // Add per-segment per-month override arrays for TDCX Team Size and TDCX % of Volume
+        let manualTdcxTeamSizeByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        let manualTdcxPercentByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        // Add per-segment per-month override arrays for core team and TDCX tickets per day
+        let manualTdcxTicketsPerDayByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        // Add per-segment per-month override array for customers
+        let manualCustomersByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+        // Add per-segment per-month override array for handleTimeImprovement
+        let manualHandleTimeImprovementByMonth = { nonvip: Array(25).fill(null), vip: Array(25).fill(null) };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadManualTeamSizeOverrides();
+            loadMaxAllowedFteByMonth();
+            loadManualDeflectionOverrides();
+            loadManualTdcxOverrides();
+            loadManualCustomersOverrides();
+            loadManualHandleTimeImprovementOverrides();
+            renderSegments();
+            setTimeout(syncNonvipTableAndChartScrolls, 0);
+        });
+
+        function renderSegments() {
+            document.getElementById('totalCoreFteTable').innerHTML = renderTotalCoreFteTable();
+            SEGMENTS.forEach(seg => {
+                document.getElementById(seg.key + '-segment').innerHTML = renderSegment(seg.key, seg.name, seg.color);
+                setTimeout(() => renderSegmentChart(seg.key, seg.color), 0);
+            });
+        }
+
+        function renderSegment(key, name, color) {
+            const inputs = segmentInputs[key];
+            let html = `<h2 style='color:${color};margin-bottom:8px;'>${name} Segment</h2>
+            <div class='grid'>
+                <div class='card'>
+                    <h3 style='color:${color};margin-bottom:8px;'>${name} Inputs</h3>
+                    <div class='segment-inputs-grid'>
+                        ${renderInput('teamSize', 'Current Core Team Size (FTEs)', inputs.teamSize, key, 'Number of core team FTEs available for this segment. This input is used as the default but can be overridden for future months in the table below.')}
+                        ${renderInput('ticketsPerDay', 'Tickets per Core FTE per Day', inputs.ticketsPerDay || 10, key, 'Number of tickets each core team FTE is expected to handle per day. This is used as the default but can be overridden for future months in the table below.', 1, 100, 1)}
+                        ${renderInput('tdcxTeamSize', 'TDCX Team Size (FTEs)', inputs.tdcxTeamSize, key, 'Number of third-party (TDCX) agents available to help. This is the default available currently, but you can override future months in the table below.')}
+                        ${renderInput('occupancy', 'Target Occupancy (%)', inputs.occupancy, key, 'The percentage of available working time you expect your core team to spend on customer contacts. Higher occupancy means more workload per FTE (leaner staffing). Lower means more buffer/slack. Example: 75% is typical for support. Increase to 85-90% if you are comfortable running leaner.', 10, 100, 1)}
+                        ${renderInput('aiDeflection', 'Future AI Deflection Volume %', inputs.aiDeflection, key, 'Default % of total volume expected to be deflected by AI. Can be overridden per month.', 0, 40, 0.1)}
+                        ${renderInput('chatDeflection', 'Future Additional Chat Deflection %', inputs.chatDeflection, key, 'Default % of total volume expected to be deflected by chat. Can be overridden per month.', 0, 30, 0.1)}
+                        ${renderInput('handleTimeImprovement', 'Handle Time Improvement %', inputs.handleTimeImprovement, key, 'Percent improvement in handle time (e.g., 10 means each FTE can handle 10% more tickets).', 0, 100, 1)}
+                    </div>
+                </div>
+            </div>`;
+            // Chart and table containers
+            if (key === 'nonvip') {
+                html += `
+                <div class='card' style='margin-top:12px;'>
+                    <h3 style='color:${color};margin-bottom:8px;'>FTEs Allocated (per month)</h3>
+                    <div id='nonvip-chart-container' style='overflow-x:auto;'><div class='chart-container'><canvas id='fteGapChart-nonvip'></canvas></div></div>
+                    <div id='nonvip-table-container' style="max-height:450px; overflow:auto;">
+                        <table class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col">Month</th>
+                                    <th>Customers</th>
+                                    <th>Email Contact Rate</th>
+                                    <th>Total Volume</th>
+                                    <th class="ai-deflect">Future AI Deflection Volume %</th>
+                                    <th class="chat-deflect">Future Additional Chat Deflection %</th>
+                                    <th class="tdcx-tickets-header">TDCX Tickets per Day</th>
+                                    <th>TDCX % of Total Volume</th>
+                                    <th>Core Team Volume</th>
+                                    <th>Core Tickets per Day</th>
+                                    <th>Handle Time Improvement %</th>
+                                    <th>Required FTEs <span class="tooltip-icon">&#x2753;<span class="custom-tooltip">Main value shows the original FTE requirement with no handle time efficiency gains.<br>Parentheses show the lower FTE requirement due to handle time improvement.<br><br><b>Formula:</b><br>Required FTEs = ceil(Core Team Volume / (Core Tickets per Day × Working Days per Month × Occupancy))</span></span></th>
+                                    <th>Shift to VIP</th>
+                                    <th>Actual Team</th>
+                                    <th>Gap</th>
+                                    <th>Seasonal Multiplier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${renderSegmentTableRows(inputs, key)}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            } else {
+                html += `
+                <div class='card' style='margin-top:12px;'>
+                    <h3 style='color:${color};margin-bottom:8px;'>FTEs Allocated (per month)</h3>
+                    <div class='chart-container'><canvas id='fteGapChart-${key}'></canvas></div>
+                    <div id='${key}-table-container' style="max-height:450px; overflow:auto;">
+                        <table class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col">Month</th>
+                                    <th>Customers</th>
+                                    <th>Email Contact Rate</th>
+                                    <th>Total Volume</th>
+                                    <th class="ai-deflect">Future AI Deflection Volume %</th>
+                                    <th class="chat-deflect">Future Additional Chat Deflection %</th>
+                                    <th class="tdcx-tickets-header">TDCX Tickets per Day</th>
+                                    <th>TDCX % of Total Volume</th>
+                                    <th>Core Team Volume</th>
+                                    <th>Core Tickets per Day</th>
+                                    <th>Handle Time Improvement %</th>
+                                    <th>Required FTEs <span class="tooltip-icon">&#x2753;<span class="custom-tooltip">Main value shows the original FTE requirement with no handle time efficiency gains.<br>Parentheses show the lower FTE requirement due to handle time improvement.<br><br><b>Formula:</b><br>Required FTEs = ceil(Core Team Volume / (Core Tickets per Day × Working Days per Month × Occupancy))</span></span></th>
+                                    <th>Actual Team</th>
+                                    <th>Gap</th>
+                                    <th>Seasonal Multiplier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${renderSegmentTableRows(inputs, key)}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            }
+            return html;
+        }
+
+        function renderInput(field, label, value, segKey, help, min=0, max=99999, step=1) {
+            return `
+                <div class="input-group">
+                    <label for="${field}-${segKey}">${label}</label>
+                    <input type="number" id="${field}-${segKey}" value="${value}" min="${min}" max="${max}" step="${step}" onchange="onSegmentInputChange('${segKey}','${field}',this.value)">
+                    <div style="font-size:12px;color:#666;margin-top:2px;">${help}</div>
+                </div>
+            `;
+        }
+
+        function onSegmentInputChange(segKey, field, value) {
+            segmentInputs[segKey][field] = parseFloat(value) || 0;
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        function renderSegmentTableRows(inputs, segKey) {
+            const forecast = calculateMonthlyForecast(inputs, segKey);
+            const defaultTeamSize = SEGMENTS.find(s => s.key === segKey).defaults.teamSize;
+            return forecast.map((month, idx) => {
+                const manualVal = manualTeamSizeByMonth[segKey][idx];
+                const isOverridden = manualVal !== null && manualVal !== undefined;
+                // AI/Chat Deflection overrides
+                const aiOverride = manualAiDeflectionByMonth[segKey][idx];
+                const chatOverride = manualChatDeflectionByMonth[segKey][idx];
+                const aiHighlight = aiOverride !== null && aiOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                const chatHighlight = chatOverride !== null && chatOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                let shiftCell = '';
+                let actualTeamCell = '';
+                if (segKey === 'nonvip') {
+                    shiftCell = `<input type=\"number\" min=\"0\" max=\"${defaultTeamSize}\" step=\"1\" value=\"${fteShiftByMonth[idx] || 0}\" data-month=\"${idx}\" style=\"width:60px;\" title=\"FTEs shifted this month\" onchange=\"onFteShiftInput(this)\">`;
+                }
+                // For VIP, highlight in green if FTE shift is nonzero and not manually overridden
+                let highlightStyle = '';
+                let readOnly = '';
+                let actualTeamTooltip = 'Manually override actual team size for this month';
+                let inputValue;
+                if (segKey === 'vip' && fteShiftByMonth[idx]) {
+                    highlightStyle = 'background:#e8f5e9;font-weight:bold;';
+                    readOnly = 'readonly';
+                    actualTeamTooltip = 'Set by FTE shift from Non-VIP';
+                    inputValue = segmentInputs['vip'].teamSize + fteShiftByMonth[idx];
+                } else if (isOverridden) {
+                    highlightStyle = 'background:#fffde7;font-weight:bold;';
+                    readOnly = '';
+                    actualTeamTooltip = 'Manually override actual team size for this month';
+                    inputValue = manualVal;
+                } else {
+                    inputValue = month.teamSize;
+                }
+                actualTeamCell = `<input type=\"number\" min=\"0\" step=\"1\" value=\"${inputValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${highlightStyle}\" title=\"${actualTeamTooltip}\" onchange=\"onManualTeamSizeInput(this)\" ${readOnly}>`;
+                // AI/Chat Deflection inputs
+                const aiDeflectedVolume = month.aiDeflectedVolume.toLocaleString();
+                const chatDeflectedVolume = month.chatDeflectedVolume.toLocaleString();
+                const isViewOnlyDeflectionMonth = idx >= 0 && idx <= 5;
+                let aiInput, chatInput;
+                if (isViewOnlyDeflectionMonth) {
+                    aiInput = `<span style='color:#888;font-weight:bold;'>0</span><div class='impact-below'><span style='color:#888;'>( 0 )</span></div>`;
+                    chatInput = `<span style='color:#888;font-weight:bold;'>0</span><div class='impact-below'><span style='color:#888;'>( 0 )</span></div>`;
+                } else {
+                    aiInput = `<input type=\"number\" min=\"0\" max=\"40\" step=\"0.1\" value=\"${aiOverride !== null && aiOverride !== undefined ? aiOverride : segmentInputs[segKey].aiDeflection}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${aiHighlight}\" title=\"Override AI Deflection (%) for this month\" onchange=\"onManualAiDeflectionInput(this)\"><div class='impact-below'><span style='color:#888;'>( ${aiDeflectedVolume} )</span></div>`;
+                    chatInput = `<input type="number" min="0" max="30" step="0.1" value="${chatOverride !== null && chatOverride !== undefined ? chatOverride : segmentInputs[segKey].chatDeflection}" data-seg="${segKey}" data-month="${idx}" style="width:60px;${chatHighlight}" title="Override Chat Deflection (%) for this month" onchange="onManualChatDeflectionInput(this)"><div class='impact-below'><span style='color:#888;'>( ${chatDeflectedVolume} )</span></div>`;
+                }
+                // TDCX Team Size and TDCX % of Volume overrides
+                const tdcxTeamSizeOverride = manualTdcxTeamSizeByMonth[segKey][idx];
+                const tdcxPercentOverride = manualTdcxPercentByMonth[segKey][idx];
+                const tdcxTeamSizeHighlight = tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                const tdcxPercentHighlight = tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                const tdcxTeamSizeInput = `<input type=\"number\" min=\"0\" max=\"99\" step=\"1\" value=\"${tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? tdcxTeamSizeOverride : segmentInputs[segKey].tdcxTeamSize}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTeamSizeHighlight}\" title=\"Override TDCX Team Size for this month\" onchange=\"onManualTdcxTeamSizeInput(this)\">`;
+                const tdcxPercentInput = `<input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"${tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? tdcxPercentOverride : segmentInputs[segKey].tdcxPercent}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxPercentHighlight}\" title=\"Override TDCX % of Volume for this month\" onchange=\"onManualTdcxPercentInput(this)\">`;
+                // Calculate actual TDCX % of Total Volume
+                const tdcxPercentOfTotal = month.tdcxVolume && month.totalVolume > 0
+                    ? (month.tdcxVolume / month.totalVolume * 100).toFixed(1) + '%'
+                    : '0%';
+                // Tickets per TDCX per day and TDCX tickets per day overrides
+                const tdcxTicketsPerDayOverride = manualTdcxTicketsPerDayByMonth[segKey][idx];
+                const tdcxTicketsPerDayHighlight = tdcxTicketsPerDayOverride !== null && tdcxTicketsPerDayOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                const tdcxTicketsPerDayInput = `<input type=\"number\" min=\"1\" max=\"100\" step=\"1\" value=\"${tdcxTicketsPerDayOverride !== null && tdcxTicketsPerDayOverride !== undefined ? tdcxTicketsPerDayOverride : 10}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTicketsPerDayHighlight}\" title=\"Override TDCX Tickets per Day for this month\" onchange=\"onManualTdcxTicketsPerDayInput(this)\"><div class='impact-below'><span style='color:#888;'>( ${month.tdcxVolume.toLocaleString()} )</span></div>`;
+                // Hardcoded actuals for Non-VIP and VIP
+                const hardcodedNonVipActuals = [11606, 11988, 12429, 12775, 13071, 13319];
+                const hardcodedVipActuals = [1644, 1710, 1766, 1876, 2050, 2189];
+                const isNonVip = segKey === 'nonvip';
+                const isVip = segKey === 'vip';
+                const isActualMonth = idx >= 0 && idx <= 5;
+                let customerValue;
+                let customerReadOnly = '';
+                if (manualCustomersByMonth[segKey][idx] !== null && manualCustomersByMonth[segKey][idx] !== undefined) {
+                    customerValue = manualCustomersByMonth[segKey][idx];
+                } else if (isActualMonth && isNonVip) {
+                    customerValue = hardcodedNonVipActuals[idx];
+                    customerReadOnly = 'readonly';
+                } else if (isActualMonth && isVip) {
+                    customerValue = hardcodedVipActuals[idx];
+                    customerReadOnly = 'readonly';
+                } else {
+                    customerValue = month.projectedCustomers;
+                }
+                const customerHighlight = isActualMonth ? 'background:#f5f5f5;color:#555;font-weight:bold;' : '';
+                let customerCell;
+                if (isActualMonth) {
+                    customerCell = `<span style='color:#555;font-weight:bold;'>${customerValue.toLocaleString()}</span>`;
+                } else {
+                    customerCell = `<input type=\"number\" min=\"0\" max=\"999999\" step=\"1\" value=\"${customerValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:90px;\" title=\"Override customers for this month\" onchange=\"onManualCustomersInput(this)\">`;
+                }
+                // In renderSegmentTableRows, update handle time improvement logic for Dec 2024 to May 2025 (idx 0-5)
+                const isViewOnlyHandleTimeMonth = idx >= 0 && idx <= 5;
+                const handleTimeImprovementOverride = manualHandleTimeImprovementByMonth[segKey][idx];
+                const handleTimeHighlight = handleTimeImprovementOverride !== null && handleTimeImprovementOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
+                let handleTimeCell;
+                if (isViewOnlyHandleTimeMonth) {
+                    handleTimeCell = `<span style='color:#888;font-weight:bold;'>0%</span>`;
+                } else {
+                    handleTimeCell = `<input type=\"number\" min=\"0\" max=\"100\" step=\"1\" value=\"${handleTimeImprovementOverride !== null && handleTimeImprovementOverride !== undefined ? handleTimeImprovementOverride : inputs.handleTimeImprovement || 0}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${handleTimeHighlight}\" title=\"Override Handle Time Improvement (%) for this month\" onchange=\"onManualHandleTimeImprovementInput(this)\">%`;
+                }
+                // Calculate required FTEs with no improvement
+                const availableTicketsPerMonthNoImprovement = inputs.ticketsPerDay * WORKING_DAYS_PER_MONTH * (inputs.occupancy || 75) / 100;
+                const requiredFTEsNoImprovement = Math.ceil(month.coreTeamVolume / availableTicketsPerMonthNoImprovement);
+                let requiredFTEs;
+                if (handleTimeImprovementOverride === 0) {
+                    requiredFTEs = requiredFTEsNoImprovement;
+                } else {
+                    const improvementFactor = 1 + (handleTimeImprovementOverride / 100);
+                    const availableTicketsPerMonth = inputs.ticketsPerDay * WORKING_DAYS_PER_MONTH * (inputs.occupancy || 75) / 100 * improvementFactor;
+                    requiredFTEs = Math.ceil(month.coreTeamVolume / availableTicketsPerMonth);
+                }
+                const coreTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined ? manualTdcxTicketsPerDayByMonth[segKey][idx] : inputs.ticketsPerDay || 10;
+                const tdcxTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined
+                    ? manualTdcxTicketsPerDayByMonth[segKey][idx]
+                    : 10; // or TDCX_TICKETS_PER_DAY if you have that constant
+                const tdcxTicketsPerDayCell = `
+                  <div class="cell-stack">
+                    <div class="main-value">
+                      <input class="oval" type="number" min="1" max="100" step="1" value="${tdcxTicketsPerDay}" data-seg="${segKey}" data-month="${idx}" style="width:48px;" title="Override TDCX Tickets per Day for this month" onchange="onManualTdcxTicketsPerDayInput(this)" />
+                    </div>
+                    <div class="impact-below">(${month.tdcxVolume.toLocaleString()})</div>
+                  </div>
+                `;
+                return `
+                    <tr${month.isCurrentMonth ? " style='background:#e3f2fd;'" : ''}>
+                        <td class=\"sticky-col\">${month.month}</td>
+                        <td>${customerCell}</td>
+                        <td>${month.contactRate.toFixed(2)}</td>
+                        <td>${month.totalVolume.toLocaleString()}</td>
+                        <td class="ai-deflect">${aiInput}</td>
+                        <td class="chat-deflect">${chatInput}</td>
+                        <td class="tdcx-tickets-cell">${tdcxTicketsPerDayCell}</td>
+                        <td><span style='color:#888;'>${tdcxPercentOfTotal}</span></td>
+                        <td>${month.coreTeamVolume.toLocaleString()}</td>
+                        <td>${coreTicketsPerDay}</td>
+                        <td>${handleTimeCell}</td>
+                        <td><div class="cell-stack"><div class="main-value static">${requiredFTEsNoImprovement}</div><div class="impact-below">(${month.requiredFTEs})</div></div></td>
+                        ${segKey === 'nonvip' ? `<td>${shiftCell}</td>` : ''}
+                        <td>${actualTeamCell}</td>
+                        <td style=\"color:${month.gap > 2 ? '#d32f2f' : month.gap > 0 ? '#fbc02d' : month.gap < 0 ? '#388e3c' : '#388e3c'};font-weight:bold;\">${month.gap}</td>
+                        <td>${month.seasonalMultiplier.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function onFteShiftInput(input) {
+            const idx = parseInt(input.getAttribute('data-month'));
+            fteShiftByMonth[idx] = parseInt(input.value) || 0;
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Add handler for manual team size input
+        function onManualTeamSizeInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseInt(input.value);
+            manualTeamSizeByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualTeamSizeOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Helper to lighten a hex color by a given percent (0-1)
+        function lightenColor(hex, percent) {
+            // Remove # if present
+            hex = hex.replace(/^#/, '');
+            if (hex.length === 3) {
+                hex = hex.split('').map(x => x + x).join('');
+            }
+            const num = parseInt(hex, 16);
+            let r = (num >> 16) & 0xFF;
+            let g = (num >> 8) & 0xFF;
+            let b = num & 0xFF;
+            r = Math.round(r + (255 - r) * percent);
+            g = Math.round(g + (255 - g) * percent);
+            b = Math.round(b + (255 - b) * percent);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function renderSegmentChart(key, color) {
+            const ctx = document.getElementById(`fteGapChart-${key}`);
+            if (!ctx) return;
+            const forecast = calculateMonthlyForecast(segmentInputs[key], key);
+            if (segmentCharts[key]) segmentCharts[key].destroy();
+
+            // Helper to create diagonal stripe pattern with segment color
+            function createStripePattern(bgColor) {
+                const size = 8;
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx2 = canvas.getContext('2d');
+                ctx2.fillStyle = bgColor;
+                ctx2.fillRect(0, 0, size, size);
+                ctx2.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx2.lineWidth = 2;
+                ctx2.beginPath();
+                ctx2.moveTo(0, size);
+                ctx2.lineTo(size, 0);
+                ctx2.stroke();
+                return ctx2.createPattern(canvas, 'repeat');
+            }
+
+            const now = new Date();
+            const barBackgrounds = forecast.map((m, idx) => {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                const isPast = monthDate < new Date(now.getFullYear(), now.getMonth(), 1);
+                // Severity color logic
+                let severityColor = color;
+                if (m.gap < 0) {
+                    severityColor = '#388e3c'; // green for overstaffed
+                } else if (m.gap > 2) {
+                    severityColor = '#d32f2f';
+                } else if (m.gap > 0) {
+                    severityColor = '#fbc02d';
+                }
+                if (isPast) {
+                    // Lighten the severity color and overlay stripes
+                    const faded = lightenColor(severityColor, 0.5); // 50% lighter
+                    return createStripePattern(faded);
+                } else {
+                    return severityColor;
+                }
+            });
+
+            segmentCharts[key] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: forecast.map(m => m.month),
+                    datasets: [{
+                        label: 'FTE Gap',
+                        data: forecast.map(m => m.gap),
+                        backgroundColor: barBackgrounds
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'FTEs Needed' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateMonthlyForecast(inputs, segKey) {
+            const forecast = [];
+            const currentDate = new Date();
+            // Real customer numbers for Jan–May
+            const realCustomersNonVip = [11988, 12429, 12775, 13071, 13319];
+            const realCustomersVip = [1710, 1766, 1876, 2050, 2189];
+            for (let month = -6; month <= 18; month++) {
+                const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + month, 1);
+                const monthName = monthDate.toLocaleString('default', { month: 'long' });
+                const year = monthDate.getFullYear();
+                let projectedCustomers;
+                if (
+                    year === currentDate.getFullYear() &&
+                    monthDate.getMonth() >= 0 && monthDate.getMonth() <= 4
+                ) {
+                    if (segKey === 'vip') {
+                        projectedCustomers = realCustomersVip[monthDate.getMonth()];
+                    } else {
+                        projectedCustomers = realCustomersNonVip[monthDate.getMonth()];
+                    }
+                } else {
+                    const monthsSinceBase = (year - currentDate.getFullYear()) * 12 + (monthDate.getMonth() - currentDate.getMonth());
+                    const growthFactor = 1 + (inputs.volumeGrowth / 100) * (Math.max(0, monthsSinceBase) / 12);
+                    projectedCustomers = Math.round(inputs.baseCustomers * growthFactor);
+                }
+                const contactRate = inputs.contactRate;
+                const aiDeflection = manualAiDeflectionByMonth[segKey][month + 6] !== null && manualAiDeflectionByMonth[segKey][month + 6] !== undefined ? manualAiDeflectionByMonth[segKey][month + 6] : inputs.aiDeflection;
+                const chatDeflection = manualChatDeflectionByMonth[segKey][month + 6] !== null && manualChatDeflectionByMonth[segKey][month + 6] !== undefined ? manualChatDeflectionByMonth[segKey][month + 6] : inputs.chatDeflection;
+                const aiDeflectionRate = aiDeflection / 100;
+                const chatDeflectionRate = chatDeflection / 100;
+                const seasonalMultiplier = segKey === 'nonvip'
+                    ? SEASONAL_MULTIPLIERS_NONVIP[(monthDate.getMonth()) % 12]
+                    : SEASONAL_MULTIPLIERS_VIP[(monthDate.getMonth()) % 12];
+                const totalVolume = projectedCustomers * contactRate * seasonalMultiplier;
+                const aiDeflectedVolume = totalVolume * aiDeflectionRate;
+                const chatDeflectedVolume = totalVolume * chatDeflectionRate;
+                const remainingVolume = totalVolume - aiDeflectedVolume - chatDeflectedVolume;
+                const tdcxTeamSize = manualTdcxTeamSizeByMonth[segKey][month + 6] !== null && manualTdcxTeamSizeByMonth[segKey][month + 6] !== undefined ? manualTdcxTeamSizeByMonth[segKey][month + 6] : inputs.tdcxTeamSize;
+                const tdcxPercent = manualTdcxPercentByMonth[segKey][month + 6] !== null && manualTdcxPercentByMonth[segKey][month + 6] !== undefined ? manualTdcxPercentByMonth[segKey][month + 6] : inputs.tdcxPercent;
+                const requestedTdcxVolume = remainingVolume * (tdcxPercent / 100);
+                let maxTdcxVolume = 0;
+                const tdcxTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][month + 6] !== null && manualTdcxTicketsPerDayByMonth[segKey][month + 6] !== undefined
+                    ? manualTdcxTicketsPerDayByMonth[segKey][month + 6]
+                    : TDCX_TICKETS_PER_DAY;
+                if (tdcxTeamSize > 0) {
+                    maxTdcxVolume = tdcxTeamSize * tdcxTicketsPerDay * WORKING_DAYS_PER_MONTH;
+                }
+                let tdcxVolume = 0;
+                if (tdcxTeamSize > 0) {
+                    tdcxVolume = Math.min(requestedTdcxVolume, maxTdcxVolume);
+                }
+                const coreTeamVolume = remainingVolume - tdcxVolume;
+                // FTE calculation using tickets per day
+                const ticketsPerDay = inputs.ticketsPerDay || 1;
+                const occupancy = (inputs.occupancy || 75) / 100;
+                const handleTimeImprovement = manualHandleTimeImprovementByMonth[segKey][month + 6] !== null && manualHandleTimeImprovementByMonth[segKey][month + 6] !== undefined ? manualHandleTimeImprovementByMonth[segKey][month + 6] : inputs.handleTimeImprovement || 0;
+                const isViewOnlyHandleTimeMonth = month + 6 >= 0 && month + 6 <= 5;
+                let effectiveHandleTimeImprovement = handleTimeImprovement;
+                if (isViewOnlyHandleTimeMonth) {
+                    effectiveHandleTimeImprovement = 0;
+                }
+                const improvementFactor = 1 + (effectiveHandleTimeImprovement / 100);
+                const availableTicketsPerMonth = ticketsPerDay * WORKING_DAYS_PER_MONTH * occupancy * improvementFactor;
+                const availableTicketsPerMonthNoImprovement = ticketsPerDay * WORKING_DAYS_PER_MONTH * occupancy;
+                let requiredFTEs = Math.ceil(coreTeamVolume / availableTicketsPerMonth);
+                const requiredFTEsNoImprovement = Math.ceil(coreTeamVolume / availableTicketsPerMonthNoImprovement);
+                if (effectiveHandleTimeImprovement === 0) {
+                    requiredFTEs = requiredFTEsNoImprovement;
+                }
+                // Per-month FTE allocation
+                const monthIdx = month + 6; // -6 to 18 => 0 to 24
+                let teamSize;
+                if (segKey === 'nonvip') {
+                    // Manual override always takes precedence
+                    if (manualTeamSizeByMonth[segKey][monthIdx] !== null && manualTeamSizeByMonth[segKey][monthIdx] !== undefined) {
+                        teamSize = manualTeamSizeByMonth[segKey][monthIdx];
+                    } else {
+                        teamSize = Math.max(0, SEGMENTS[0].defaults.teamSize - (fteShiftByMonth[monthIdx] || 0));
+                    }
+                } else if (segKey === 'vip') {
+                    if (fteShiftByMonth[monthIdx]) {
+                        teamSize = segmentInputs['vip'].teamSize + fteShiftByMonth[monthIdx];
+                    } else if (manualTeamSizeByMonth[segKey][monthIdx] !== null && manualTeamSizeByMonth[segKey][monthIdx] !== undefined) {
+                        teamSize = manualTeamSizeByMonth[segKey][monthIdx];
+                    } else {
+                        teamSize = segmentInputs['vip'].teamSize;
+                    }
+                }
+                const gap = requiredFTEs - teamSize;
+                const isCurrentMonth = (monthDate.getFullYear() === currentDate.getFullYear() && monthDate.getMonth() === currentDate.getMonth());
+                forecast.push({
+                    month: `${monthName} ${year}`,
+                    projectedCustomers: projectedCustomers,
+                    contactRate: contactRate,
+                    totalVolume: Math.round(totalVolume),
+                    aiDeflectedVolume: Math.round(aiDeflectedVolume),
+                    chatDeflectedVolume: Math.round(chatDeflectedVolume),
+                    tdcxVolume: Math.round(tdcxVolume),
+                    coreTeamVolume: Math.round(coreTeamVolume),
+                    handleTime: inputs.handleTime,
+                    requiredFTEs: requiredFTEs,
+                    requiredFTEsNoImprovement: requiredFTEsNoImprovement,
+                    teamSize: teamSize,
+                    gap: gap,
+                    isCurrentMonth: isCurrentMonth,
+                    seasonalMultiplier: seasonalMultiplier
+                });
+            }
+            return forecast;
+        }
+
+        // Add a function to render the horizontal summary table for total core FTEs
+        function renderTotalCoreFteTable() {
+            // Calculate total FTEs per month (sum of Non-VIP and VIP actual team)
+            const nonvipForecast = calculateMonthlyForecast(segmentInputs['nonvip'], 'nonvip');
+            const vipForecast = calculateMonthlyForecast(segmentInputs['vip'], 'vip');
+            // Use abbreviated month names
+            const months = nonvipForecast.map(m => {
+                const [fullMonth, year] = m.month.split(' ');
+                const abbr = fullMonth.slice(0, 3);
+                return `${abbr} ${year}`;
+            });
+            const totalFtes = nonvipForecast.map((m, idx) => {
+                const nonvipFte = manualTeamSizeByMonth['nonvip'][idx] !== null && manualTeamSizeByMonth['nonvip'][idx] !== undefined ? manualTeamSizeByMonth['nonvip'][idx] : m.teamSize;
+                const vipFte = manualTeamSizeByMonth['vip'][idx] !== null && manualTeamSizeByMonth['vip'][idx] !== undefined ? manualTeamSizeByMonth['vip'][idx] : vipForecast[idx].teamSize;
+                return nonvipFte + vipFte;
+            });
+            // Render as a horizontal table
+            let html = '<div style="overflow-x:auto;margin-bottom:16px;"><table class="summary-table" style="border-collapse:collapse;width:auto;min-width:600px;text-align:center;background:#fafafa;"><thead><tr>';
+            html += '<th style="padding:2px 6px;">Month</th>';
+            months.forEach(month => { html += `<th style="padding:2px 6px;">${month}</th>`; });
+            html += '</tr></thead><tbody>';
+            // Max Allowed row (editable)
+            html += '<tr><td style="font-weight:bold;padding:2px 6px;">Max Allowed <span title="Set the maximum allowed core FTEs for each month" style="cursor:help;">&#9432;</span></td>';
+            maxAllowedFteByMonth.forEach((max, idx) => {
+                html += `<td><input class="max-allowed-input" type="number" min="0" step="1" value="${max !== '' ? max : ''}" data-month="${idx}" onchange="onMaxAllowedFteInput(this)" style="text-align:center;">`;
+            });
+            html += '</tr>';
+            // Total FTEs row
+            html += '<tr><td style="font-weight:bold;padding:2px 6px;">Total Core FTEs Allocated</td>';
+            totalFtes.forEach(fte => { html += `<td style="padding:2px 6px;">${fte}</td>`; });
+            html += '</tr>';
+            // Status row
+            html += '<tr><td style="font-weight:bold;padding:2px 6px;">Status</td>';
+            totalFtes.forEach((fte, idx) => {
+                const max = maxAllowedFteByMonth[idx] !== '' ? parseInt(maxAllowedFteByMonth[idx]) : null;
+                let status = '';
+                let color = '';
+                if (max !== null && !isNaN(max)) {
+                    if (fte > max) {
+                        status = '⚠️';
+                        color = 'color:#d32f2f;font-weight:bold;';
+                    } else {
+                        status = '✅';
+                        color = 'color:#388e3c;font-weight:bold;';
+                    }
+                }
+                html += `<td style="${color}">${status}</td>`;
+            });
+            html += '</tr>';
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        // Handler for max allowed FTE input
+        function onMaxAllowedFteInput(input) {
+            const idx = parseInt(input.getAttribute('data-month'));
+            maxAllowedFteByMonth[idx] = input.value === '' ? '' : parseInt(input.value);
+            saveMaxAllowedFteByMonth();
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Add a function to preserve and restore scroll positions of table containers
+        function preserveTableScrollPositions(renderFn) {
+            const containers = [
+                document.getElementById('nonvip-table-container'),
+                document.getElementById('vip-table-container')
+            ];
+            const scrolls = containers.map(c => c ? { id: c.id, top: c.scrollTop, left: c.scrollLeft } : null);
+            renderFn();
+            scrolls.forEach(s => {
+                if (s && document.getElementById(s.id)) {
+                    document.getElementById(s.id).scrollTop = s.top;
+                    document.getElementById(s.id).scrollLeft = s.left;
+                }
+            });
+        }
+
+        // On page load, load manual team size overrides from localStorage for current and prior months
+        function loadManualTeamSizeOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const saved = localStorage.getItem('manualTeamSizeByMonth_' + segKey);
+                if (saved) {
+                    const arr = JSON.parse(saved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            // Only load for current and prior months
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualTeamSizeByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Save manual team size overrides for current and prior months to localStorage
+        function saveManualTeamSizeOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                // Only save current and prior months
+                const arr = manualTeamSizeByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualTeamSizeByMonth_' + segKey, JSON.stringify(arr));
+            });
+        }
+
+        // Save maxAllowedFteByMonth to localStorage
+        function saveMaxAllowedFteByMonth() {
+            localStorage.setItem('maxAllowedFteByMonth', JSON.stringify(maxAllowedFteByMonth));
+        }
+
+        // Load maxAllowedFteByMonth from localStorage
+        function loadMaxAllowedFteByMonth() {
+            const saved = localStorage.getItem('maxAllowedFteByMonth');
+            if (saved) {
+                const arr = JSON.parse(saved);
+                if (Array.isArray(arr)) {
+                    arr.forEach((val, idx) => {
+                        maxAllowedFteByMonth[idx] = val;
+                    });
+                }
+            }
+        }
+
+        // Save/load manual deflection overrides to/from localStorage
+        function saveManualDeflectionOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                // Only save current and prior months
+                const aiArr = manualAiDeflectionByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                const chatArr = manualChatDeflectionByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualAiDeflectionByMonth_' + segKey, JSON.stringify(aiArr));
+                localStorage.setItem('manualChatDeflectionByMonth_' + segKey, JSON.stringify(chatArr));
+            });
+        }
+
+        function loadManualDeflectionOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const aiSaved = localStorage.getItem('manualAiDeflectionByMonth_' + segKey);
+                if (aiSaved) {
+                    const arr = JSON.parse(aiSaved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualAiDeflectionByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+                const chatSaved = localStorage.getItem('manualChatDeflectionByMonth_' + segKey);
+                if (chatSaved) {
+                    const arr = JSON.parse(chatSaved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualChatDeflectionByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Add handlers for manual AI/Chat Deflection input
+        function onManualAiDeflectionInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseFloat(input.value);
+            manualAiDeflectionByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualDeflectionOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        function onManualChatDeflectionInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseFloat(input.value);
+            manualChatDeflectionByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualDeflectionOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Add JS to sync horizontal scroll between nonvip-table-container and nonvip-chart-container
+        function syncNonvipTableAndChartScrolls() {
+            const table = document.getElementById('nonvip-table-container');
+            const chart = document.getElementById('nonvip-chart-container');
+            let isSyncing = false;
+            function syncScroll(source, target) {
+                if (isSyncing) return;
+                isSyncing = true;
+                target.scrollLeft = source.scrollLeft;
+                setTimeout(() => { isSyncing = false; }, 0);
+            }
+            if (table && chart) {
+                table.onscroll = () => syncScroll(table, chart);
+                chart.onscroll = () => syncScroll(chart, table);
+            }
+        }
+
+        // Add handlers for manual TDCX Team Size and TDCX % of Volume input
+        function onManualTdcxTeamSizeInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseInt(input.value);
+            manualTdcxTeamSizeByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualTdcxOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        function onManualTdcxPercentInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseFloat(input.value);
+            manualTdcxPercentByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualTdcxOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Save/load manual TDCX overrides to/from localStorage
+        function saveManualTdcxOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                // Only save current and prior months
+                const tdcxTeamArr = manualTdcxTeamSizeByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                const tdcxPercentArr = manualTdcxPercentByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualTdcxTeamSizeByMonth_' + segKey, JSON.stringify(tdcxTeamArr));
+                localStorage.setItem('manualTdcxPercentByMonth_' + segKey, JSON.stringify(tdcxPercentArr));
+            });
+        }
+
+        function loadManualTdcxOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const tdcxTeamSaved = localStorage.getItem('manualTdcxTeamSizeByMonth_' + segKey);
+                if (tdcxTeamSaved) {
+                    const arr = JSON.parse(tdcxTeamSaved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualTdcxTeamSizeByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+                const tdcxPercentSaved = localStorage.getItem('manualTdcxPercentByMonth_' + segKey);
+                if (tdcxPercentSaved) {
+                    const arr = JSON.parse(tdcxPercentSaved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualTdcxPercentByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Add handlers for manual tickets per day and TDCX tickets per day input
+        function onManualTdcxTicketsPerDayInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseInt(input.value);
+            manualTdcxTicketsPerDayByMonth[segKey][idx] = val;
+            preserveTableScrollPositions(renderSegments); // Ensure table re-renders
+        }
+
+        function onManualTdcxTicketsPerDayOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const arr = manualTdcxTicketsPerDayByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualTdcxTicketsPerDayByMonth_' + segKey, JSON.stringify(arr));
+            });
+        }
+
+        // Add handler for manual customers input
+        function onManualCustomersInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseInt(input.value);
+            manualCustomersByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualCustomersOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Save/load manual customers overrides to/from localStorage
+        function saveManualCustomersOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const arr = manualCustomersByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualCustomersByMonth_' + segKey, JSON.stringify(arr));
+            });
+        }
+
+        function loadManualCustomersOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const saved = localStorage.getItem('manualCustomersByMonth_' + segKey);
+                if (saved) {
+                    const arr = JSON.parse(saved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualCustomersByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Add handler for manual handle time improvement input
+        function onManualHandleTimeImprovementInput(input) {
+            const segKey = input.getAttribute('data-seg');
+            const idx = parseInt(input.getAttribute('data-month'));
+            const val = input.value === '' ? null : parseInt(input.value);
+            manualHandleTimeImprovementByMonth[segKey][idx] = val;
+            // Only save for current and prior months
+            const now = new Date();
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                saveManualHandleTimeImprovementOverrides();
+            }
+            preserveTableScrollPositions(renderSegments);
+        }
+
+        // Save/load manual handle time improvement overrides to/from localStorage
+        function saveManualHandleTimeImprovementOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const arr = manualHandleTimeImprovementByMonth[segKey].map((val, idx) => {
+                    const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                    if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                        return val;
+                    } else {
+                        return null;
+                    }
+                });
+                localStorage.setItem('manualHandleTimeImprovementByMonth_' + segKey, JSON.stringify(arr));
+            });
+        }
+
+        function loadManualHandleTimeImprovementOverrides() {
+            const now = new Date();
+            ['nonvip', 'vip'].forEach(segKey => {
+                const saved = localStorage.getItem('manualHandleTimeImprovementByMonth_' + segKey);
+                if (saved) {
+                    const arr = JSON.parse(saved);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((val, idx) => {
+                            const monthDate = new Date(now.getFullYear(), now.getMonth() + idx - 6, 1);
+                            if (monthDate <= new Date(now.getFullYear(), now.getMonth(), 1)) {
+                                manualHandleTimeImprovementByMonth[segKey][idx] = val;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
