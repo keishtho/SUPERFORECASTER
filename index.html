@@ -501,6 +501,10 @@
         const MINUTES_PER_HOUR = 60;
         const TDCX_TICKETS_PER_DAY = 10;
 
+        // Add after other constants
+        const hardcodedTdcxTeamSize = [0, 0, 6, 6, 6, 6];
+        const hardcodedTdcxTicketsPerDay = [0, 0, 0, 5, 5, 10];
+
         // Store segment data
         const SEGMENTS = [
             {
@@ -602,6 +606,7 @@
                         ${renderInput('chatDeflection', 'Future Additional Chat Deflection %', inputs.chatDeflection, key, 'Default % of total volume expected to be deflected by chat. Can be overridden per month.', 0, 30, 0.1)}
                         ${renderInput('handleTimeImprovement', 'Handle Time Improvement %', inputs.handleTimeImprovement, key, 'Percent improvement in handle time (e.g., 10 means each FTE can handle 10% more tickets).', 0, 100, 1)}
                         ${renderInput('tdcxTicketsPerDay', 'TDCX Tickets per Day', inputs.tdcxTicketsPerDay || 10, key, 'Default tickets per TDCX agent per day. Can be overridden per month in the table below.', 1, 100, 1)}
+                        ${renderInput('tdcxTeamSize', 'TDCX Team Size (FTEs)', inputs.tdcxTeamSize, key, 'Number of third-party (TDCX) agents available to help. This is the default available currently, but you can override future months in the table below.')}
                     </div>
                     <button class="reset-segment-btn" onclick="resetSegmentInputs('${key}')">Reset</button>
                 </div>
@@ -622,6 +627,7 @@
                                     <th>Total Volume</th>
                                     <th class="ai-deflect">Future AI Deflection Volume %</th>
                                     <th class="chat-deflect">Future Additional Chat Deflection %</th>
+                                    <th>TDCX Team Size</th>
                                     <th class="tdcx-tickets-header">TDCX Tickets per Day</th>
                                     <th>TDCX % of Total Volume</th>
                                     <th>Core Team Volume</th>
@@ -655,6 +661,7 @@
                                     <th>Total Volume</th>
                                     <th class="ai-deflect">Future AI Deflection Volume %</th>
                                     <th class="chat-deflect">Future Additional Chat Deflection %</th>
+                                    <th>TDCX Team Size</th>
                                     <th class="tdcx-tickets-header">TDCX Tickets per Day</th>
                                     <th>TDCX % of Total Volume</th>
                                     <th>Core Team Volume</th>
@@ -744,7 +751,9 @@
                 const tdcxTeamSizeHighlight = tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
                 const tdcxPercentHighlight = tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
                 const tdcxTeamSizeValue = tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? tdcxTeamSizeOverride : segmentInputs[segKey].tdcxTeamSize;
-                const tdcxTeamSizeInput = `<input type=\"number\" min=\"0\" max=\"99\" step=\"1\" value=\"${tdcxTeamSizeValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTeamSizeHighlight}\" title=\"Override TDCX Team Size for this month\" onchange=\"onManualTdcxTeamSizeInput(this)\">`;
+                const tdcxTeamSizeInput = idx >= 0 && idx <= 5
+                  ? `<div class="cell-stack"><div class="main-value static">${tdcxTeamSizeValue}</div></div>`
+                  : `<input type=\"number\" min=\"0\" max=\"99\" step=\"1\" value=\"${tdcxTeamSizeValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTeamSizeHighlight}\" title=\"Override TDCX Team Size for this month\" onchange=\"onManualTdcxTeamSizeInput(this)\">`;
                 const tdcxPercentInput = `<input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"${tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? tdcxPercentOverride : segmentInputs[segKey].tdcxPercent}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxPercentHighlight}\" title=\"Override TDCX % of Volume for this month\" onchange=\"onManualTdcxPercentInput(this)\">`;
                 // Calculate actual TDCX % of Total Volume
                 const tdcxPercentOfTotal = month.tdcxVolume && month.totalVolume > 0
@@ -753,7 +762,10 @@
                 // Tickets per TDCX per day and TDCX tickets per day overrides
                 const tdcxTicketsPerDayOverride = manualTdcxTicketsPerDayByMonth[segKey][idx];
                 const tdcxTicketsPerDayHighlight = tdcxTicketsPerDayOverride !== null && tdcxTicketsPerDayOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
-                const tdcxTicketsPerDayInput = `<input type=\"number\" min=\"1\" max=\"100\" step=\"1\" value=\"${tdcxTicketsPerDayOverride !== null && tdcxTicketsPerDayOverride !== undefined ? tdcxTicketsPerDayOverride : 10}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTicketsPerDayHighlight}\" title=\"Override TDCX Tickets per Day for this month\" onchange=\"onManualTdcxTicketsPerDayInput(this)\"><div class='impact-below'><span style='color:#888;'>( ${month.tdcxVolume.toLocaleString()} )</span></div>`;
+                const tdcxTicketsPerDayValue = idx >= 0 && idx <= 5 ? hardcodedTdcxTicketsPerDay[idx] : (manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined ? manualTdcxTicketsPerDayByMonth[segKey][idx] : segmentInputs[segKey].tdcxTicketsPerDay || 10);
+                const tdcxTicketsPerDayCell = idx >= 0 && idx <= 5
+                  ? `<div class=\"cell-stack\"><div class=\"main-value static\">${tdcxTicketsPerDayValue}</div><div class=\"impact-below\">( ${(tdcxTeamSizeValue * tdcxTicketsPerDayValue * WORKING_DAYS_PER_MONTH).toLocaleString()} )</div></div>`
+                  : `<div class=\"cell-stack\"><div class=\"main-value\"><input class=\"oval\" type=\"number\" min=\"1\" max=\"100\" step=\"1\" value=\"${tdcxTicketsPerDayValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:48px;\" title=\"Override TDCX Tickets per Day for this month\" onchange=\"onManualTdcxTicketsPerDayInput(this)\" /></div><div class=\"impact-below\">( ${(tdcxTeamSizeValue * tdcxTicketsPerDayValue * WORKING_DAYS_PER_MONTH).toLocaleString()} )</div></div>`;
                 // Hardcoded actuals for Non-VIP and VIP
                 const hardcodedNonVipActuals = [11606, 11988, 12429, 12775, 13071, 13319];
                 const hardcodedVipActuals = [1644, 1710, 1766, 1876, 2050, 2189];
@@ -812,15 +824,6 @@
                         ? manualTdcxTicketsPerDayByMonth[segKey][idx]
                         : segmentInputs[segKey].tdcxTicketsPerDay || 10;
                 }
-                const tdcxVolumeCalc = tdcxTeamSizeValue * tdcxTicketsPerDay * WORKING_DAYS_PER_MONTH;
-                const tdcxTicketsPerDayCell = `
-                  <div class="cell-stack">
-                    <div class="main-value">
-                      <input class="oval" type="number" min="1" max="100" step="1" value="${tdcxTicketsPerDay}" data-seg="${segKey}" data-month="${idx}" style="width:48px;" title="Override TDCX Tickets per Day for this month" onchange="onManualTdcxTicketsPerDayInput(this)" />
-                    </div>
-                    <div class="impact-below">(${tdcxVolumeCalc.toLocaleString()})</div>
-                  </div>
-                `;
                 return `
                     <tr${month.isCurrentMonth ? " style='background:#e3f2fd;'" : ''}>
                         <td class=\"sticky-col\">${month.month}</td>
