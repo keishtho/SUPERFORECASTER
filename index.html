@@ -823,22 +823,21 @@
                 `;
                 return `
                     <tr${month.isCurrentMonth ? " style='background:#e3f2fd;'" : ''}>
-                        <td class=\"sticky-col\">${month.month}</td>
+                        <td class="sticky-col">${month.month}</td>
                         <td>${customerCell}</td>
                         <td>${month.contactRate.toFixed(2)}</td>
-                        <td>${month.totalVolume.toLocaleString()}</td>
                         <td class="ai-deflect">${aiInput}</td>
                         <td class="chat-deflect">${chatInput}</td>
                         <td>${tdcxTeamSizeInput}</td>
-                        <td class=\"tdcx-tickets-cell\">${tdcxTicketsPerDayCell}</td>
+                        <td class="tdcx-tickets-cell">${tdcxTicketsPerDayCell}</td>
                         <td><span style='color:#888;'>${tdcxPercentOfTotal}</span></td>
                         <td>${month.coreTeamVolume.toLocaleString()}</td>
                         <td>${coreTicketsPerDay}</td>
                         <td>${handleTimeCell}</td>
                         <td><div class="cell-stack"><div class="main-value static">${requiredFTEsNoImprovement}</div><div class="impact-below">(${month.requiredFTEs})</div></div></td>
-                        ${segKey === 'nonvip' ? `<td>${shiftCell}</td>` : ''}
+                        <td>${segKey === 'nonvip' ? shiftCell : ''}</td>
                         <td>${actualTeamCell}</td>
-                        <td style=\"color:${month.gap > 2 ? '#d32f2f' : month.gap > 0 ? '#fbc02d' : month.gap < 0 ? '#388e3c' : '#388e3c'};font-weight:bold;\">${month.gap}</td>
+                        <td style="color:${month.gap > 2 ? '#d32f2f' : month.gap > 0 ? '#fbc02d' : month.gap < 0 ? '#388e3c' : '#388e3c'};font-weight:bold;">${month.gap}</td>
                         <td>${month.seasonalMultiplier.toFixed(2)}</td>
                     </tr>
                 `;
