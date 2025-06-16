@@ -439,6 +439,40 @@
           min-width: 120px;
           padding-right: 18px;
         }
+        /* Add to <style> section */
+        .oval.static-oval {
+          width: 60px;
+          height: 38px;
+          border-radius: 6px;
+          background: #fff;
+          font-size: 16px;
+          font-weight: 500;
+          color: #222;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1.5px solid #90caf9;
+          margin: 0 auto;
+          pointer-events: none;
+          user-select: none;
+          box-shadow: 0 1px 2px rgba(25, 118, 210, 0.05);
+        }
+        .reset-segment-btn {
+          background: #f7f8fa;
+          color: #1976d2;
+          border: 1.5px solid #90caf9;
+          border-radius: 6px;
+          padding: 6px 18px;
+          font-size: 15px;
+          font-weight: 600;
+          margin-left: 16px;
+          cursor: pointer;
+          transition: background 0.18s, color 0.18s;
+        }
+        .reset-segment-btn:hover {
+          background: #e3f2fd;
+          color: #125ea2;
+        }
     </style>
 </head>
 <body>
@@ -569,6 +603,7 @@
                         ${renderInput('chatDeflection', 'Future Additional Chat Deflection %', inputs.chatDeflection, key, 'Default % of total volume expected to be deflected by chat. Can be overridden per month.', 0, 30, 0.1)}
                         ${renderInput('handleTimeImprovement', 'Handle Time Improvement %', inputs.handleTimeImprovement, key, 'Percent improvement in handle time (e.g., 10 means each FTE can handle 10% more tickets).', 0, 100, 1)}
                     </div>
+                    <button class="reset-segment-btn" onclick="resetSegmentInputs('${key}')">Reset</button>
                 </div>
             </div>`;
             // Chart and table containers
@@ -1044,8 +1079,13 @@
             html += '</tr></thead><tbody>';
             // Max Allowed row (editable)
             html += '<tr><td style="font-weight:bold;padding:2px 6px;">Max Allowed <span title="Set the maximum allowed core FTEs for each month" style="cursor:help;">&#9432;</span></td>';
+            const hardcodedMaxAllowed = [17, 17, 18, 18, 19, 22];
             maxAllowedFteByMonth.forEach((max, idx) => {
-                html += `<td><input class="max-allowed-input" type="number" min="0" step="1" value="${max !== '' ? max : ''}" data-month="${idx}" onchange="onMaxAllowedFteInput(this)" style="text-align:center;">`;
+                if (idx >= 0 && idx < 6) {
+                    html += `<td><input class="max-allowed-input" type="number" value="${hardcodedMaxAllowed[idx]}" disabled tabindex="-1" style="text-align:center;"></td>`;
+                } else {
+                    html += `<td><input class="max-allowed-input" type="number" min="0" step="1" value="${max !== '' ? max : ''}" data-month="${idx}" onchange="onMaxAllowedFteInput(this)" style="text-align:center;"></td>`;
+                }
             });
             html += '</tr>';
             // Total FTEs row
@@ -1460,6 +1500,12 @@
                     }
                 }
             });
+        }
+
+        function resetSegmentInputs(segKey) {
+          const segment = SEGMENTS.find(s => s.key === segKey);
+          segmentInputs[segKey] = { ...segment.defaults };
+          preserveTableScrollPositions(renderSegments);
         }
     </script>
 </body>
