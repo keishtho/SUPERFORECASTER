@@ -597,11 +597,11 @@
                     <div class='segment-inputs-grid'>
                         ${renderInput('teamSize', 'Current Core Team Size (FTEs)', inputs.teamSize, key, 'Number of core team FTEs available for this segment. This input is used as the default but can be overridden for future months in the table below.')}
                         ${renderInput('ticketsPerDay', 'Tickets per Core FTE per Day', inputs.ticketsPerDay || 10, key, 'Number of tickets each core team FTE is expected to handle per day. This is used as the default but can be overridden for future months in the table below.', 1, 100, 1)}
-                        ${renderInput('tdcxTeamSize', 'TDCX Team Size (FTEs)', inputs.tdcxTeamSize, key, 'Number of third-party (TDCX) agents available to help. This is the default available currently, but you can override future months in the table below.')}
                         ${renderInput('occupancy', 'Target Occupancy (%)', inputs.occupancy, key, 'The percentage of available working time you expect your core team to spend on customer contacts. Higher occupancy means more workload per FTE (leaner staffing). Lower means more buffer/slack. Example: 75% is typical for support. Increase to 85-90% if you are comfortable running leaner.', 10, 100, 1)}
                         ${renderInput('aiDeflection', 'Future AI Deflection Volume %', inputs.aiDeflection, key, 'Default % of total volume expected to be deflected by AI. Can be overridden per month.', 0, 40, 0.1)}
                         ${renderInput('chatDeflection', 'Future Additional Chat Deflection %', inputs.chatDeflection, key, 'Default % of total volume expected to be deflected by chat. Can be overridden per month.', 0, 30, 0.1)}
                         ${renderInput('handleTimeImprovement', 'Handle Time Improvement %', inputs.handleTimeImprovement, key, 'Percent improvement in handle time (e.g., 10 means each FTE can handle 10% more tickets).', 0, 100, 1)}
+                        ${renderInput('tdcxTicketsPerDay', 'TDCX Tickets per Day', inputs.tdcxTicketsPerDay || 10, key, 'Default tickets per TDCX agent per day. Can be overridden per month in the table below.', 1, 100, 1)}
                     </div>
                     <button class="reset-segment-btn" onclick="resetSegmentInputs('${key}')">Reset</button>
                 </div>
@@ -743,7 +743,8 @@
                 const tdcxPercentOverride = manualTdcxPercentByMonth[segKey][idx];
                 const tdcxTeamSizeHighlight = tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
                 const tdcxPercentHighlight = tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? 'background:#fffde7;font-weight:bold;' : '';
-                const tdcxTeamSizeInput = `<input type=\"number\" min=\"0\" max=\"99\" step=\"1\" value=\"${tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? tdcxTeamSizeOverride : segmentInputs[segKey].tdcxTeamSize}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTeamSizeHighlight}\" title=\"Override TDCX Team Size for this month\" onchange=\"onManualTdcxTeamSizeInput(this)\">`;
+                const tdcxTeamSizeValue = tdcxTeamSizeOverride !== null && tdcxTeamSizeOverride !== undefined ? tdcxTeamSizeOverride : segmentInputs[segKey].tdcxTeamSize;
+                const tdcxTeamSizeInput = `<input type=\"number\" min=\"0\" max=\"99\" step=\"1\" value=\"${tdcxTeamSizeValue}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxTeamSizeHighlight}\" title=\"Override TDCX Team Size for this month\" onchange=\"onManualTdcxTeamSizeInput(this)\">`;
                 const tdcxPercentInput = `<input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"${tdcxPercentOverride !== null && tdcxPercentOverride !== undefined ? tdcxPercentOverride : segmentInputs[segKey].tdcxPercent}\" data-seg=\"${segKey}\" data-month=\"${idx}\" style=\"width:60px;${tdcxPercentHighlight}\" title=\"Override TDCX % of Volume for this month\" onchange=\"onManualTdcxPercentInput(this)\">`;
                 // Calculate actual TDCX % of Total Volume
                 const tdcxPercentOfTotal = month.tdcxVolume && month.totalVolume > 0
@@ -801,15 +802,23 @@
                     requiredFTEs = Math.ceil(month.coreTeamVolume / availableTicketsPerMonth);
                 }
                 const coreTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined ? manualTdcxTicketsPerDayByMonth[segKey][idx] : inputs.ticketsPerDay || 10;
-                const tdcxTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined
-                    ? manualTdcxTicketsPerDayByMonth[segKey][idx]
-                    : 10; // or TDCX_TICKETS_PER_DAY if you have that constant
+                let tdcxTicketsPerDay;
+                if (idx === 0 || idx === 1 || idx === 2) { // Dec, Jan, Feb
+                    tdcxTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined
+                        ? manualTdcxTicketsPerDayByMonth[segKey][idx]
+                        : 0;
+                } else {
+                    tdcxTicketsPerDay = manualTdcxTicketsPerDayByMonth[segKey][idx] !== null && manualTdcxTicketsPerDayByMonth[segKey][idx] !== undefined
+                        ? manualTdcxTicketsPerDayByMonth[segKey][idx]
+                        : segmentInputs[segKey].tdcxTicketsPerDay || 10;
+                }
+                const tdcxVolumeCalc = tdcxTeamSizeValue * tdcxTicketsPerDay * WORKING_DAYS_PER_MONTH;
                 const tdcxTicketsPerDayCell = `
                   <div class="cell-stack">
                     <div class="main-value">
                       <input class="oval" type="number" min="1" max="100" step="1" value="${tdcxTicketsPerDay}" data-seg="${segKey}" data-month="${idx}" style="width:48px;" title="Override TDCX Tickets per Day for this month" onchange="onManualTdcxTicketsPerDayInput(this)" />
                     </div>
-                    <div class="impact-below">(${month.tdcxVolume.toLocaleString()})</div>
+                    <div class="impact-below">(${tdcxVolumeCalc.toLocaleString()})</div>
                   </div>
                 `;
                 return `
@@ -820,7 +829,8 @@
                         <td>${month.totalVolume.toLocaleString()}</td>
                         <td class="ai-deflect">${aiInput}</td>
                         <td class="chat-deflect">${chatInput}</td>
-                        <td class="tdcx-tickets-cell">${tdcxTicketsPerDayCell}</td>
+                        <td>${tdcxTeamSizeInput}</td>
+                        <td class=\"tdcx-tickets-cell\">${tdcxTicketsPerDayCell}</td>
                         <td><span style='color:#888;'>${tdcxPercentOfTotal}</span></td>
                         <td>${month.coreTeamVolume.toLocaleString()}</td>
                         <td>${coreTicketsPerDay}</td>
