@@ -333,6 +333,52 @@
                 font-size: 10px;
             }
         }
+
+        .manual-override {
+            font-style: italic;
+            background-color: #fffde7; /* A very light yellow to indicate edited */
+        }
+
+        .reset-button {
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+            color: #888;
+            display: inline-block;
+            transition: color 0.2s;
+        }
+
+        .reset-button:hover {
+            color: #e53935; /* Red on hover to indicate a destructive action */
+        }
+
+        .reset-all-button {
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+            color: #888;
+            display: inline-block;
+            transition: color 0.2s;
+            font-weight: normal; /* To not make the icon bold */
+        }
+
+        .reset-all-button:hover {
+            color: #e53935;
+        }
+
+        .column-lock-toggle {
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 5px;
+            font-weight: normal;
+        }
+
+        .cell-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px; /* Ensure a minimum width for the cell content */
+        }
     </style>
 </head>
 <body>

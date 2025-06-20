@@ -6,6 +6,7 @@ class SuperForecaster {
         this.state = {
             segments: {"nonvip":{"name":"Non-VIP","color":"#3498db","config":{"customers":13000,"contactRate":0.48,"aiDeflection":20,"chatDeflection":20,"handleTimeImprovement":20,"coreTeamSize":15,"tdcxTeamSize":6,"coreTicketsPerDay":10,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}},"vip":{"name":"VIP","color":"#e74c3c","config":{"customers":10000,"contactRate":0.05,"aiDeflection":15,"chatDeflection":10,"handleTimeImprovement":5,"coreTeamSize":15,"tdcxTeamSize":5,"coreTicketsPerDay":12,"tdcxTicketsPerDay":12,"seasonalMultiplier":1.2}},"plus":{"name":"Plus","color":"#f39c12","config":{"customers":5000,"contactRate":0.08,"aiDeflection":10,"chatDeflection":5,"handleTimeImprovement":5,"coreTeamSize":10,"tdcxTeamSize":2,"coreTicketsPerDay":10,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}}},
             months: this.generateMonths(),
+            columnLocks: {},
             manualOverrides: {"nonvip":{"Dec 2024":{"shiftToVip":0,"customers":11342,"aiDeflection":0,"chatDeflection":0,"tdcxTeamSize":0,"coreTeamSize":10,"coreTicketsPerDay":15,"contactRate":0.31,"handleTimeImprovement":0,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jan 2025":{"customers":11968,"tdcxTeamSize":0,"contactRate":0.42,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":9,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Feb 2025":{"customers":12429,"tdcxTeamSize":0,"contactRate":0.43,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Mar 2025":{"customers":12775,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.53,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Apr 2025":{"customers":13071,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.48,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"May 2025":{"customers":13319,"tdcxTeamSize":6,"tdcxTicketsPerDay":10,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":13,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jun 2025":{"customers":13657,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"seasonalMultiplier":1,"coreOvertime":1},"Jul 2025":{"customers":14053,"aiDeflection":20,"chatDeflection":20,"coreTeamSize":12,"coreTicketsPerDay":15,"handleTimeImprovement":0,"seasonalMultiplier":0.75},"Aug 2025":{"customers":14402,"seasonalMultiplier":0.94},"Sep 2025":{"customers":14835,"seasonalMultiplier":0.98},"Oct 2025":{"customers":15236,"seasonalMultiplier":0.98},"Nov 2025":{"customers":15644,"seasonalMultiplier":0.92},"Dec 2025":{"customers":15972,"seasonalMultiplier":0.75},"Jan 2026":{"customers":16384,"seasonalMultiplier":0.96},"Feb 2026":{"customers":16789,"seasonalMultiplier":1.01},"Mar 2026":{"customers":17209,"seasonalMultiplier":1.18},"Apr 2026":{"customers":17742,"seasonalMultiplier":1.09},"May 2026":{"customers":18194,"seasonalMultiplier":0.94},"Jun 2026":{"customers":18608,"seasonalMultiplier":0.95},"Jul 2026":{"customers":18959,"seasonalMultiplier":0.75},"Aug 2026":{"customers":19332,"seasonalMultiplier":0.94},"Sep 2026":{"customers":19783,"seasonalMultiplier":0.98},"Oct 2026":{"customers":20205,"seasonalMultiplier":0.98},"Nov 2026":{"customers":20663,"seasonalMultiplier":0.92},"Dec 2026":{"customers":21040,"seasonalMultiplier":0.75}}}
         };
 
@@ -65,6 +66,23 @@ class SuperForecaster {
                         } else {
                             this.state.segments[segment].config[config] = value;
                         }
+
+                        // Propagate default change to monthly inputs without overrides
+                        this.state.months.forEach(month => {
+                            const monthId = month.month;
+                            const hasOverride = this.state.manualOverrides?.[segment]?.[monthId]?.[config] !== undefined;
+                            const isRowLocked = this.state.manualOverrides?.[segment]?.[monthId]?.isLocked || false;
+                            const isColLocked = this.isColumnLocked(segment, config);
+
+                            if (!hasOverride && !isRowLocked && !isColLocked) {
+                                const inputEl = document.querySelector(`.forecast-table input[data-segment="${segment}"][data-month="${monthId}"][data-config="${config}"]`);
+                                if (inputEl) {
+                                    // The value in the input is always the direct user-facing value
+                                    inputEl.value = value;
+                                }
+                            }
+                        });
+
                         this.updateCalculations();
                     }
                 }
@@ -110,6 +128,32 @@ class SuperForecaster {
                     const { segment, month } = lockToggle.dataset;
                     if (segment && month) {
                         this.toggleRowLock(segment, month);
+                    }
+                }
+
+                const resetButton = e.target.closest('.reset-button');
+                if (resetButton) {
+                    const { segment, month, config } = resetButton.dataset;
+                    if (segment && month && config) {
+                        this.clearManualOverride(segment, month, config);
+                    }
+                }
+
+                const resetAllButton = e.target.closest('.reset-all-button');
+                if (resetAllButton) {
+                    const { segment, config } = resetAllButton.dataset;
+                    if (segment && config) {
+                        if (confirm(`Are you sure you want to reset all monthly overrides for this column in the ${this.state.segments[segment].name} segment?`)) {
+                            this.clearAllOverridesForConfig(segment, config);
+                        }
+                    }
+                }
+
+                const columnLockToggle = e.target.closest('.column-lock-toggle');
+                if (columnLockToggle) {
+                    const { segment, config } = columnLockToggle.dataset;
+                    if (segment && config) {
+                        this.toggleColumnLock(segment, config);
                     }
                 }
             });
@@ -382,7 +426,13 @@ class SuperForecaster {
     // Render forecast table for a segment
     renderSegmentForecast(segmentKey, segment) {
         const months = this.state.months.map(month => {
-            return this.renderTableRow(month, segmentKey)
+            const isLocked = this.getConfigValue(segmentKey, month, 'isLocked') || false;
+            const isCurrentMonth = month.isCurrentMonth ? 'background: #e3f2fd;' : '';
+            return `
+                <tr style="${isCurrentMonth}" class="${isLocked ? 'row-locked' : ''}" data-segment="${segmentKey}" data-month="${month.month}">
+                    ${this.renderTableRow(month, segmentKey)}
+                </tr>
+            `;
         }).join('');
 
         let shiftHeader = '';
@@ -394,6 +444,17 @@ class SuperForecaster {
             shiftHeader = '<th></th>'; // Empty header for Plus segment
         }
 
+        const createHeaderCell = (label, configKey) => {
+            if (configKey) {
+                const isLocked = this.isColumnLocked(segmentKey, configKey);
+                const lockIcon = isLocked ? '🔒' : '🔓';
+                const lockToggle = this.isAdminMode() ? `<span class="column-lock-toggle" data-segment="${segmentKey}" data-config="${configKey}" title="Admin: Lock/Unlock this column">${lockIcon}</span>` : '';
+                const resetAllButton = !isLocked ? `<span class="reset-all-button" data-segment="${segmentKey}" data-config="${configKey}" title="Reset all monthly overrides for ${label}">⟲</span>` : '';
+                return `<th>${label} ${lockToggle} ${resetAllButton}</th>`;
+            }
+            return `<th>${label}</th>`;
+        };
+
         return `
             <div class="card">
                 <h2 style="color: ${segment.color}">${segment.name} Segment Forecast</h2>
@@ -402,30 +463,30 @@ class SuperForecaster {
                         <thead>
                             <tr>
                                 <th class="sticky-col">Month</th>
-                                <th>Customer Base</th>
-                                <th>Contact Rate (%)</th>
-                                <th>Est. Volume</th>
-                                <th>Seasonal Multiplier</th>
-                                <th>Total Volume</th>
-                                <th>AI Deflection %</th>
-                                <th>AI Deflected</th>
-                                <th>Chat Deflection %</th>
-                                <th>Chat Deflected</th>
-                                <th>Post-Deflection Volume</th>
-                                <th>TDCX Team Size</th>
-                                <th>TDCX Tickets/Day</th>
-                                <th>TDCX Volume</th>
-                                <th>TDCX %</th>
-                                <th>Remaining Volume</th>
-                                <th>Core Team Size</th>
-                                <th>Core Overtime</th>
-                                <th>Core Tickets/Day</th>
-                                <th>% Improvement in Handle Time</th>
+                                ${createHeaderCell('Customer Base', 'customers')}
+                                ${createHeaderCell('Contact Rate (%)', 'contactRate')}
+                                ${createHeaderCell('Est. Volume')}
+                                ${createHeaderCell('Seasonal Multiplier', 'seasonalMultiplier')}
+                                ${createHeaderCell('Total Volume')}
+                                ${createHeaderCell('AI Deflection %', 'aiDeflection')}
+                                ${createHeaderCell('AI Deflected')}
+                                ${createHeaderCell('Chat Deflection %', 'chatDeflection')}
+                                ${createHeaderCell('Chat Deflected')}
+                                ${createHeaderCell('Post-Deflection Volume')}
+                                ${createHeaderCell('TDCX Team Size', 'tdcxTeamSize')}
+                                ${createHeaderCell('TDCX Tickets/Day', 'tdcxTicketsPerDay')}
+                                ${createHeaderCell('TDCX Volume')}
+                                ${createHeaderCell('TDCX %')}
+                                ${createHeaderCell('Remaining Volume')}
+                                ${createHeaderCell('Core Team Size', 'coreTeamSize')}
+                                ${createHeaderCell('Core Overtime', 'coreOvertime')}
+                                ${createHeaderCell('Core Tickets/Day', 'coreTicketsPerDay')}
+                                ${createHeaderCell('% Improvement in Handle Time', 'handleTimeImprovement')}
                                 ${shiftHeader}
-                                <th>Required FTEs</th>
-                                <th>Gap</th>
-                                <th>Sentiment</th>
-                                <th>Lock</th>
+                                ${createHeaderCell('Required FTEs')}
+                                ${createHeaderCell('Gap')}
+                                ${createHeaderCell('Sentiment')}
+                                ${createHeaderCell('Lock')}
                             </tr>
                         </thead>
                         <tbody>
@@ -455,7 +516,7 @@ class SuperForecaster {
         const coreTicketsPerDay = this.getConfigValue(segmentKey, month, 'coreTicketsPerDay');
         const seasonalMultiplier = this.getConfigValue(segmentKey, month, 'seasonalMultiplier');
         const coreOvertime = this.getConfigValue(segmentKey, month, 'coreOvertime') || 0;
-        const isLocked = this.getConfigValue(segmentKey, month, 'isLocked') || false;
+        const isRowLocked = this.getConfigValue(segmentKey, month, 'isLocked') || false;
 
         const isCurrentMonth = month.isCurrentMonth ? 'background: #e3f2fd;' : '';
         const gapColor = forecast.gap > 2 ? 'status-negative' : forecast.gap > 0 ? 'status-warning' : 'status-positive';
@@ -463,20 +524,20 @@ class SuperForecaster {
         let shiftInput = '';
         if (segmentKey === 'nonvip') {
             const shiftToVip = this.getConfigValue(segmentKey, month, 'shiftToVip') || 0;
-            shiftInput = `<td><input type="number" value="${shiftToVip}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToVip" step="1" min="0"></td>`;
+            shiftInput = `<td><input type="number" value="${shiftToVip}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToVip" step="1" min="0" ${isRowLocked ? 'readonly' : ''}></td>`;
         } else if (segmentKey === 'vip') {
             const shiftToPlus = this.getConfigValue(segmentKey, month, 'shiftToPlus') || 0;
-            shiftInput = `<td><input type="number" value="${shiftToPlus}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToPlus" step="1" min="0"></td>`;
+            shiftInput = `<td><input type="number" value="${shiftToPlus}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToPlus" step="1" min="0" ${isRowLocked ? 'readonly' : ''}></td>`;
         } else {
             shiftInput = '<td></td>'; // Empty cell for Plus segment
         }
 
         let sentimentInput = '<td></td>';
-        if (month.isPastMonth) {
+        if (month.isPastMonth || month.isCurrentMonth) {
             const sentiment = this.getConfigValue(segmentKey, month, 'sentiment') || '';
             sentimentInput = `
                 <td>
-                    <select data-segment="${segmentKey}" data-month="${month.month}" data-config="sentiment" style="font-size: 16px; border-radius: 4px; border: 1px solid #ddd;" ${isLocked ? 'disabled' : ''}>
+                    <select data-segment="${segmentKey}" data-month="${month.month}" data-config="sentiment" style="font-size: 16px; border-radius: 4px; border: 1px solid #ddd;" ${isRowLocked ? 'disabled' : ''}>
                         <option value=""></option>
                         <option value="🙂" ${sentiment === '🙂' ? 'selected' : ''}>🙂</option>
                         <option value="😐" ${sentiment === '😐' ? 'selected' : ''}>😐</option>
@@ -486,8 +547,8 @@ class SuperForecaster {
             `;
         }
 
-        const lockIcon = isLocked ? '🔒' : '🔓';
-        const canToggle = this.isAdminMode() || !isLocked;
+        const lockIcon = isRowLocked ? '🔒' : '🔓';
+        const canToggle = this.isAdminMode() || !isRowLocked;
 
         const lockCell = `
             <td>
@@ -496,39 +557,58 @@ class SuperForecaster {
                 </span>
             </td>`;
 
-        return `
-            <tr style="${isCurrentMonth}" class="${isLocked ? 'row-locked' : ''}" data-segment="${segmentKey}" data-month="${month.month}">
-                <td class="sticky-col">${month.month}</td>
-                <td><input type="number" value="${customerBase}" data-segment="${segmentKey}" data-month="${month.month}" data-config="customers" ${segmentKey === 'nonvip' || isLocked ? 'readonly' : ''}></td>
-                <td><input type="number" value="${contactRate * 100}" data-segment="${segmentKey}" data-month="${month.month}" data-config="contactRate" step="0.01" ${isLocked ? 'readonly' : ''}></td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="estVolume">${forecast.estVolume.toLocaleString()}</td>
-                <td><input type="number" value="${seasonalMultiplier.toFixed(1)}" data-segment="${segmentKey}" data-month="${month.month}" data-config="seasonalMultiplier" step="0.1" ${segmentKey === 'nonvip' || isLocked ? 'readonly' : ''}></td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="totalVolume">${forecast.totalVolume.toLocaleString()}</td>
-                <td><input type="number" value="${aiDeflection}" data-segment="${segmentKey}" data-month="${month.month}" data-config="aiDeflection" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="aiDeflectedVolume">${forecast.aiDeflectedVolume.toLocaleString()}</td>
-                <td><input type="number" value="${chatDeflection}" data-segment="${segmentKey}" data-month="${month.month}" data-config="chatDeflection" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="chatDeflectedVolume">${forecast.chatDeflectedVolume.toLocaleString()}</td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="postDeflectionVolume">${forecast.remainingVolume.toLocaleString()}</td>
-                <td><input type="number" value="${tdcxTeamSize}" data-segment="${segmentKey}" data-month="${month.month}" data-config="tdcxTeamSize" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td><input type="number" value="${tdcxTicketsPerDay}" data-segment="${segmentKey}" data-month="${month.month}" data-config="tdcxTicketsPerDay" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxVolume">${forecast.tdcxVolume.toLocaleString()}</td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxPercentOfTotal">${forecast.tdcxPercentOfTotal}%</td>
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="coreTeamVolume">${forecast.coreTeamVolume.toLocaleString()}</td>
-                <td><input type="number" value="${coreTeamSize}" data-segment="${segmentKey}" data-month="${month.month}" data-config="coreTeamSize" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td><input type="number" value="${coreOvertime}" data-segment="${segmentKey}" data-month="${month.month}" data-config="coreOvertime" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td><input type="number" value="${coreTicketsPerDay}" data-segment="${segmentKey}" data-month="${month.month}" data-config="coreTicketsPerDay" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                <td><input type="number" value="${handleTimeImprovement}" data-segment="${segmentKey}" data-month="${month.month}" data-config="handleTimeImprovement" step="0.1" ${isLocked ? 'readonly' : ''}></td>
-                ${shiftInput.replace('<input', `<input ${isLocked ? 'readonly' : ''}`)}
-                <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="requiredFTEs">
-                    <div class="cell-stack">
-                        <div class="main-value">${forecast.requiredFTEs}</div>
-                        <div class="impact-below">(${forecast.requiredFTEsWithImprovement})</div>
+        const createEditableCell = (configKey, value, options = {}) => {
+            const override = this.state.manualOverrides?.[segmentKey]?.[month.month]?.[configKey];
+            const isOverridden = override !== undefined && override !== null;
+            const isColLocked = this.isColumnLocked(segmentKey, configKey);
+
+            const inputType = options.type || 'number';
+            const step = options.step || '1';
+            const min = options.min || '0';
+            const isPercent = options.isPercent || false;
+            const displayValue = isPercent ? value * 100 : value;
+
+            const inputClass = isOverridden ? 'manual-override' : '';
+            const resetButton = isOverridden && !isRowLocked && !isColLocked ? `<span class="reset-button" data-segment="${segmentKey}" data-month="${month.month}" data-config="${configKey}">⟲</span>` : '';
+            
+            return `
+                <td>
+                    <div class="cell-wrapper">
+                        <input type="${inputType}" value="${displayValue}" class="${inputClass}" data-segment="${segmentKey}" data-month="${month.month}" data-config="${configKey}" step="${step}" min="${min}" ${isRowLocked || isColLocked ? 'readonly' : ''}>
+                        ${resetButton}
                     </div>
-                </td>
-                <td class="gap-cell ${gapColor}" data-segment="${segmentKey}" data-month="${month.month}" data-cell="gap">${forecast.gap}</td>
-                ${sentimentInput}
-                ${lockCell}
-            </tr>
+                </td>`;
+        };
+        
+        return `
+            <td class="sticky-col">${month.month}</td>
+            ${createEditableCell('customers', customerBase)}
+            ${createEditableCell('contactRate', contactRate, { isPercent: true, step: '0.1' })}
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="estVolume">${forecast.estVolume.toLocaleString()}</td>
+            ${createEditableCell('seasonalMultiplier', seasonalMultiplier, { step: '0.01' })}
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="totalVolume">${forecast.totalVolume.toLocaleString()}</td>
+            ${createEditableCell('aiDeflection', aiDeflection, { step: '0.1' })}
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="aiDeflectedVolume">${forecast.aiDeflectedVolume.toLocaleString()}</td>
+            ${createEditableCell('chatDeflection', chatDeflection, { step: '0.1' })}
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="chatDeflectedVolume">${forecast.chatDeflectedVolume.toLocaleString()}</td>
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="postDeflectionVolume">${forecast.remainingVolume.toLocaleString()}</td>
+            ${createEditableCell('tdcxTeamSize', tdcxTeamSize, { step: '0.1' })}
+            ${createEditableCell('tdcxTicketsPerDay', tdcxTicketsPerDay, { step: '0.1' })}
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxVolume">${forecast.tdcxVolume.toLocaleString()}</td>
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxPercentOfTotal" class="non-editable-cell">${forecast.tdcxPercentOfTotal}%</td>
+            <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="coreTeamVolume">${forecast.coreTeamVolume.toLocaleString()}</td>
+            ${createEditableCell('coreTeamSize', coreTeamSize, { step: '0.1' })}
+            ${createEditableCell('coreOvertime', coreOvertime, { step: '0.1' })}
+            ${createEditableCell('coreTicketsPerDay', coreTicketsPerDay, { step: '0.1' })}
+            ${createEditableCell('handleTimeImprovement', handleTimeImprovement, { step: '0.1' })}
+            ${shiftInput}
+            <td class="required-ftes-cell" data-segment="${segmentKey}" data-month="${month.month}" data-cell="requiredFTEs">
+                <div class="main-value">${forecast.requiredFTEs}</div>
+                <div class="impact-below">(${forecast.requiredFTEsWithImprovement})</div>
+            </td>
+            <td class="gap-cell ${gapColor}" data-segment="${segmentKey}" data-month="${month.month}" data-cell="gap">${forecast.gap}</td>
+            ${sentimentInput}
+            ${lockCell}
         `;
     }
 
@@ -666,7 +746,8 @@ class SuperForecaster {
     saveState() {
         try {
             const stateToSave = {
-                segments: this.state.segments
+                segments: this.state.segments,
+                columnLocks: this.state.columnLocks
             };
             localStorage.setItem('superforecaster-state', JSON.stringify(stateToSave));
         } catch (error) {
@@ -688,6 +769,10 @@ class SuperForecaster {
                         };
                     }
                 });
+
+                if (parsedState.columnLocks) {
+                    this.state.columnLocks = parsedState.columnLocks;
+                }
             }
         } catch (error) {
             console.warn('Failed to load state:', error);
@@ -738,9 +823,82 @@ class SuperForecaster {
         }
         return output;
     }
+
+    clearManualOverride(segmentKey, monthId, configKey) {
+        if (this.state.manualOverrides?.[segmentKey]?.[monthId]?.[configKey] !== undefined) {
+            delete this.state.manualOverrides[segmentKey][monthId][configKey];
+
+            // Clean up empty objects
+            if (Object.keys(this.state.manualOverrides[segmentKey][monthId]).length === 0) {
+                delete this.state.manualOverrides[segmentKey][monthId];
+            }
+            if (Object.keys(this.state.manualOverrides[segmentKey]).length === 0) {
+                delete this.state.manualOverrides[segmentKey];
+            }
+
+            this.saveOverrides();
+
+            // Re-render the affected row's content
+            const rowElement = document.querySelector(`tr[data-segment="${segmentKey}"][data-month="${monthId}"]`);
+            const monthObject = this.state.months.find(m => m.month === monthId);
+            if (rowElement && monthObject) {
+                rowElement.innerHTML = this.renderTableRow(monthObject, segmentKey);
+            }
+
+            this.updateCalculations();
+        }
+    }
+
+    clearAllOverridesForConfig(segmentKey, configKey) {
+        if (this.isColumnLocked(segmentKey, configKey)) {
+            return; // Column is locked, do nothing.
+        }
+
+        if (this.state.manualOverrides?.[segmentKey]) {
+            Object.keys(this.state.manualOverrides[segmentKey]).forEach(monthId => {
+                const isRowLocked = this.state.manualOverrides[segmentKey]?.[monthId]?.isLocked || false;
+
+                if (!isRowLocked && this.state.manualOverrides[segmentKey][monthId]?.[configKey] !== undefined) {
+                    delete this.state.manualOverrides[segmentKey][monthId][configKey];
+                }
+                // Clean up empty month objects
+                if (Object.keys(this.state.manualOverrides[segmentKey][monthId]).length === 0) {
+                    delete this.state.manualOverrides[segmentKey][monthId];
+                }
+            });
+    
+            // Clean up empty segment object
+            if (Object.keys(this.state.manualOverrides[segmentKey]).length === 0) {
+                delete this.state.manualOverrides[segmentKey];
+            }
+    
+            this.saveOverrides();
+            this.render(); // Re-render everything to be safe
+        }
+    }
+
+    isColumnLocked(segmentKey, configKey) {
+        return this.state.columnLocks?.[segmentKey]?.[configKey] || false;
+    }
+
+    toggleColumnLock(segmentKey, configKey) {
+        if (!this.isAdminMode()) {
+            return; // Silently prevent non-admins from changing locks
+        }
+
+        if (!this.state.columnLocks[segmentKey]) {
+            this.state.columnLocks[segmentKey] = {};
+        }
+
+        const isLocked = !this.isColumnLocked(segmentKey, configKey);
+        this.state.columnLocks[segmentKey][configKey] = isLocked;
+
+        this.saveState();
+        this.render(); // Re-render to update the entire UI state
+    }
 }
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.superForecaster = new SuperForecaster();
-}); 
+});
