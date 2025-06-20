@@ -4,10 +4,10 @@
 class SuperForecaster {
     constructor() {
         this.state = {
-            segments: {"nonvip":{"name":"Non-VIP","color":"#3498db","config":{"customers":13000,"contactRate":0.48,"aiDeflection":20,"chatDeflection":20,"handleTimeImprovement":20,"coreTeamSize":15,"tdcxTeamSize":6,"coreTicketsPerDay":10,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}},"vip":{"name":"VIP","color":"#e74c3c","config":{"customers":10000,"contactRate":0.05,"aiDeflection":15,"chatDeflection":10,"handleTimeImprovement":5,"coreTeamSize":15,"tdcxTeamSize":5,"coreTicketsPerDay":12,"tdcxTicketsPerDay":12,"seasonalMultiplier":1.2}},"plus":{"name":"Plus","color":"#f39c12","config":{"customers":5000,"contactRate":0.08,"aiDeflection":10,"chatDeflection":5,"handleTimeImprovement":5,"coreTeamSize":10,"tdcxTeamSize":2,"coreTicketsPerDay":10,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}}},
+            segments: {"nonvip":{"name":"Non-VIP","color":"#3498db","config":{"customers":13000,"contactRate":0.48,"aiDeflection":20,"chatDeflection":20,"handleTimeImprovement":20,"coreTeamSize":12,"tdcxTeamSize":6,"coreTicketsPerDay":15,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}},"vip":{"name":"VIP","color":"#e74c3c","config":{"customers":10000,"contactRate":1.15,"aiDeflection":20,"chatDeflection":20,"handleTimeImprovement":20,"coreTeamSize":12,"tdcxTeamSize":0,"coreTicketsPerDay":7,"tdcxTicketsPerDay":0,"seasonalMultiplier":1.2}},"plus":{"name":"Plus","color":"#f39c12","config":{"customers":5000,"contactRate":0.08,"aiDeflection":20,"chatDeflection":20,"handleTimeImprovement":20,"coreTeamSize":4,"tdcxTeamSize":0,"coreTicketsPerDay":5,"tdcxTicketsPerDay":10,"seasonalMultiplier":1.2}}},
             months: this.generateMonths(),
             columnLocks: {},
-            manualOverrides: {"nonvip":{"Dec 2024":{"shiftToVip":0,"customers":11342,"aiDeflection":0,"chatDeflection":0,"tdcxTeamSize":0,"coreTeamSize":10,"coreTicketsPerDay":15,"contactRate":0.31,"handleTimeImprovement":0,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jan 2025":{"customers":11968,"tdcxTeamSize":0,"contactRate":0.42,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":9,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Feb 2025":{"customers":12429,"tdcxTeamSize":0,"contactRate":0.43,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Mar 2025":{"customers":12775,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.53,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Apr 2025":{"customers":13071,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.48,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"May 2025":{"customers":13319,"tdcxTeamSize":6,"tdcxTicketsPerDay":10,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":13,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jun 2025":{"customers":13657,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"seasonalMultiplier":1,"coreOvertime":1},"Jul 2025":{"customers":14053,"aiDeflection":20,"chatDeflection":20,"coreTeamSize":12,"coreTicketsPerDay":15,"handleTimeImprovement":0,"seasonalMultiplier":0.75},"Aug 2025":{"customers":14402,"seasonalMultiplier":0.94},"Sep 2025":{"customers":14835,"seasonalMultiplier":0.98},"Oct 2025":{"customers":15236,"seasonalMultiplier":0.98},"Nov 2025":{"customers":15644,"seasonalMultiplier":0.92},"Dec 2025":{"customers":15972,"seasonalMultiplier":0.75},"Jan 2026":{"customers":16384,"seasonalMultiplier":0.96},"Feb 2026":{"customers":16789,"seasonalMultiplier":1.01},"Mar 2026":{"customers":17209,"seasonalMultiplier":1.18},"Apr 2026":{"customers":17742,"seasonalMultiplier":1.09},"May 2026":{"customers":18194,"seasonalMultiplier":0.94},"Jun 2026":{"customers":18608,"seasonalMultiplier":0.95},"Jul 2026":{"customers":18959,"seasonalMultiplier":0.75},"Aug 2026":{"customers":19332,"seasonalMultiplier":0.94},"Sep 2026":{"customers":19783,"seasonalMultiplier":0.98},"Oct 2026":{"customers":20205,"seasonalMultiplier":0.98},"Nov 2026":{"customers":20663,"seasonalMultiplier":0.92},"Dec 2026":{"customers":21040,"seasonalMultiplier":0.75}}}
+            manualOverrides: {}
         };
 
         this.constants = {
@@ -402,15 +402,15 @@ class SuperForecaster {
                         <input type="number" id="${segmentKey}-contactRate" data-segment="${segmentKey}" data-config="contactRate" value="${config.contactRate * 100}" step="0.01" min="0">
                     </div>
                     <div class="form-group">
-                        <label for="${segmentKey}-aiDeflection">Future AI Deflection %</label>
+                        <label for="${segmentKey}-aiDeflection">⚡️Future AI Deflection %</label>
                         <input type="number" id="${segmentKey}-aiDeflection" data-segment="${segmentKey}" data-config="aiDeflection" value="${config.aiDeflection}" min="0" max="100" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label for="${segmentKey}-chatDeflection">Future Chat Deflection %</label>
+                        <label for="${segmentKey}-chatDeflection">⚡️Future Chat Deflection %</label>
                         <input type="number" id="${segmentKey}-chatDeflection" data-segment="${segmentKey}" data-config="chatDeflection" value="${config.chatDeflection}" min="0" max="100" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label for="${segmentKey}-handleTimeImprovement">% Improvement in Handle Time</label>
+                        <label for="${segmentKey}-handleTimeImprovement">⚡️% Improvement in Handle Time</label>
                         <input type="number" id="${segmentKey}-handleTimeImprovement" data-segment="${segmentKey}" data-config="handleTimeImprovement" value="${config.handleTimeImprovement}" min="0" max="100" step="0.1">
                     </div>
                     <div class="form-group">
@@ -483,9 +483,9 @@ class SuperForecaster {
                                 ${createHeaderCell('Est. Volume')}
                                 ${createHeaderCell('Seasonal Multiplier', 'seasonalMultiplier')}
                                 ${createHeaderCell('Total Volume')}
-                                ${createHeaderCell('AI Deflection %', 'aiDeflection')}
+                                ${createHeaderCell('⚡️AI Deflection %', 'aiDeflection')}
                                 ${createHeaderCell('AI Deflected')}
-                                ${createHeaderCell('Chat Deflection %', 'chatDeflection')}
+                                ${createHeaderCell('⚡️Chat Deflection %', 'chatDeflection')}
                                 ${createHeaderCell('Chat Deflected')}
                                 ${createHeaderCell('Post-Deflection Volume')}
                                 ${createHeaderCell('TDCX Team Size', 'tdcxTeamSize')}
@@ -496,7 +496,7 @@ class SuperForecaster {
                                 ${createHeaderCell('Core Team Size', 'coreTeamSize')}
                                 ${createHeaderCell('Core Overtime', 'coreOvertime')}
                                 ${createHeaderCell('Core Tickets/Day', 'coreTicketsPerDay')}
-                                ${createHeaderCell('% Improvement in Handle Time', 'handleTimeImprovement')}
+                                ${createHeaderCell('⚡️% Improvement in Handle Time', 'handleTimeImprovement')}
                                 ${shiftHeader}
                                 ${createHeaderCell('Required FTEs')}
                                 ${createHeaderCell('Gap')}
@@ -604,10 +604,10 @@ class SuperForecaster {
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="totalVolume">${forecast.totalVolume.toLocaleString()}</td>
             ${createEditableCell('aiDeflection', aiDeflection, { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="aiDeflectedVolume">${forecast.aiDeflectedVolume.toLocaleString()}</td>
-            ${createEditableCell('chatDeflection', chatDeflection, { step: '0.1' })}
+            ${createEditableCell('⚡️Chat Deflection %', 'chatDeflection', { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="chatDeflectedVolume">${forecast.chatDeflectedVolume.toLocaleString()}</td>
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="postDeflectionVolume">${forecast.remainingVolume.toLocaleString()}</td>
-            ${createEditableCell('tdcxTeamSize', tdcxTeamSize, { step: '0.1' })}
+            ${createEditableCell('TDCX Team Size', 'tdcxTeamSize', { step: '0.1' })}
             ${createEditableCell('tdcxTicketsPerDay', tdcxTicketsPerDay, { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxVolume">${forecast.tdcxVolume.toLocaleString()}</td>
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxPercentOfTotal" class="non-editable-cell">${forecast.tdcxPercentOfTotal}%</td>
@@ -711,6 +711,38 @@ class SuperForecaster {
             }
         };
 
+        const zeroLinePlugin = {
+            id: 'zeroLineForGap',
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                const meta = chart.getDatasetMeta(0); // Assuming one dataset
+                const yAxis = chart.scales.y;
+        
+                meta.data.forEach((bar, index) => {
+                    const month = months[index]; // The `months` array from the outer scope
+                    const gapValue = month.gap;
+        
+                    if (gapValue === 0) {
+                        ctx.save();
+                        // Use the same color logic as for positive bars, but make it solid
+                        ctx.strokeStyle = month.isPastMonth ? 'rgba(39, 174, 96, 0.8)' : '#27ae60';
+                        ctx.lineWidth = 3; // Make it a noticeable line
+                        
+                        const y = yAxis.getPixelForValue(0);
+                        const xStart = bar.x - bar.width / 2;
+                        const xEnd = bar.x + bar.width / 2;
+        
+                        ctx.beginPath();
+                        ctx.moveTo(xStart, y);
+                        ctx.lineTo(xEnd, y);
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                    }
+                });
+            }
+        };
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -744,7 +776,7 @@ class SuperForecaster {
                     }
                 }
             },
-            plugins: [sentimentPlugin]
+            plugins: [sentimentPlugin, zeroLinePlugin]
         });
     }
 
@@ -800,12 +832,10 @@ class SuperForecaster {
             if (saved) {
                 const savedOverrides = JSON.parse(saved);
                 // Deep merge saved overrides into the default overrides
-                // This preserves the defaults and applies user-specific changes on top
                 this.state.manualOverrides = this._deepMerge(this.state.manualOverrides, savedOverrides);
             }
         } catch (error) {
             console.warn('Failed to load overrides:', error);
-            // Keep the default overrides if localStorage is corrupted
         }
     }
 
