@@ -55,7 +55,7 @@ class SuperForecaster {
                 }
             },
             months: this.generateMonths(),
-            manualOverrides: {}
+            manualOverrides: {"nonvip":{"Dec 2024":{"shiftToVip":0,"customers":11342,"aiDeflection":0,"chatDeflection":0,"tdcxTeamSize":0,"coreTeamSize":10,"coreTicketsPerDay":15,"contactRate":0.31,"handleTimeImprovement":0,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jan 2025":{"customers":11968,"tdcxTeamSize":0,"contactRate":0.42,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":9,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Feb 2025":{"customers":12429,"tdcxTeamSize":0,"contactRate":0.43,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Mar 2025":{"customers":12775,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.53,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":8,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Apr 2025":{"customers":13071,"tdcxTeamSize":6,"tdcxTicketsPerDay":5,"contactRate":0.48,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"sentiment":"☹️","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"May 2025":{"customers":13319,"tdcxTeamSize":6,"tdcxTicketsPerDay":10,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":13,"sentiment":"🙂","seasonalMultiplier":1,"coreOvertime":2,"isLocked":true},"Jun 2025":{"customers":13657,"aiDeflection":0,"chatDeflection":0,"coreTicketsPerDay":15,"handleTimeImprovement":0,"coreTeamSize":12,"seasonalMultiplier":1,"coreOvertime":1},"Jul 2025":{"customers":14053,"aiDeflection":20,"chatDeflection":20,"coreTeamSize":12,"coreTicketsPerDay":15,"handleTimeImprovement":0,"seasonalMultiplier":0.75},"Aug 2025":{"customers":14402,"seasonalMultiplier":0.94},"Sep 2025":{"customers":14835,"seasonalMultiplier":0.98},"Oct 2025":{"customers":15236,"seasonalMultiplier":0.98},"Nov 2025":{"customers":15644,"seasonalMultiplier":0.92},"Dec 2025":{"customers":15972,"seasonalMultiplier":0.75},"Jan 2026":{"customers":16384,"seasonalMultiplier":0.96},"Feb 2026":{"customers":16789,"seasonalMultiplier":1.01},"Mar 2026":{"customers":17209,"seasonalMultiplier":1.18},"Apr 2026":{"customers":17742,"seasonalMultiplier":1.09},"May 2026":{"customers":18194,"seasonalMultiplier":0.94},"Jun 2026":{"customers":18608,"seasonalMultiplier":0.95},"Jul 2026":{"customers":18959,"seasonalMultiplier":0.75},"Aug 2026":{"customers":19332,"seasonalMultiplier":0.94},"Sep 2026":{"customers":19783,"seasonalMultiplier":0.98},"Oct 2026":{"customers":20205,"seasonalMultiplier":0.98},"Nov 2026":{"customers":20663,"seasonalMultiplier":0.92},"Dec 2026":{"customers":21040,"seasonalMultiplier":0.75}}}
         };
 
         this.constants = {
@@ -747,11 +747,14 @@ class SuperForecaster {
         try {
             const saved = localStorage.getItem('superforecaster-overrides');
             if (saved) {
-                this.state.manualOverrides = JSON.parse(saved);
+                const savedOverrides = JSON.parse(saved);
+                // Deep merge saved overrides into the default overrides
+                // This preserves the defaults and applies user-specific changes on top
+                this.state.manualOverrides = this._deepMerge(this.state.manualOverrides, savedOverrides);
             }
         } catch (error) {
             console.warn('Failed to load overrides:', error);
-            this.state.manualOverrides = {};
+            // Keep the default overrides if localStorage is corrupted
         }
     }
 
@@ -761,6 +764,28 @@ class SuperForecaster {
         } catch (error) {
             console.warn('Failed to save overrides:', error);
         }
+    }
+
+    // Helper for deep merging states
+    _isObject(item) {
+        return (item && typeof item === 'object' && !Array.isArray(item));
+    }
+
+    _deepMerge(target, source) {
+        const output = { ...target };
+        if (this._isObject(target) && this._isObject(source)) {
+            Object.keys(source).forEach(key => {
+                if (this._isObject(source[key])) {
+                    if (!(key in target))
+                        Object.assign(output, { [key]: source[key] });
+                    else
+                        output[key] = this._deepMerge(target[key], source[key]);
+                } else {
+                    Object.assign(output, { [key]: source[key] });
+                }
+            });
+        }
+        return output;
     }
 }
 
