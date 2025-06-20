@@ -917,3 +917,5 @@ class SuperForecaster {
 document.addEventListener('DOMContentLoaded', () => {
     window.superForecaster = new SuperForecaster();
 });
+
+// Test commit to verify user configuration.
