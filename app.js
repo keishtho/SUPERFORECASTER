@@ -389,6 +389,8 @@ class SuperForecaster {
     // Render configuration panel for a segment
     renderSegmentConfig(segmentKey, segment) {
         const config = segment.config;
+        const contactRateValue = (config.contactRate * 100).toFixed(2);
+
         return `
             <div class="card">
                 <h2 style="color: ${segment.color}">${segment.name} Segment Default Configuration</h2>
@@ -399,7 +401,7 @@ class SuperForecaster {
                     </div>
                     <div class="form-group">
                         <label for="${segmentKey}-contactRate">Contact Rate (%)</label>
-                        <input type="number" id="${segmentKey}-contactRate" data-segment="${segmentKey}" data-config="contactRate" value="${config.contactRate * 100}" step="0.01" min="0">
+                        <input type="number" id="${segmentKey}-contactRate" data-segment="${segmentKey}" data-config="contactRate" value="${contactRateValue}" step="0.01" min="0">
                     </div>
                     <div class="form-group">
                         <label for="${segmentKey}-aiDeflection">⚡️Future AI Deflection %</label>
@@ -587,7 +589,7 @@ class SuperForecaster {
             const step = options.step || '1';
             const min = options.min || '0';
             const isPercent = options.isPercent || false;
-            const displayValue = isPercent ? value * 100 : value;
+            const displayValue = isPercent ? (value * 100).toFixed(2) : value;
 
             const inputClass = isOverridden ? 'manual-override' : '';
             const resetButton = isOverridden && !isRowLocked && !isColLocked ? `<span class="reset-button" data-segment="${segmentKey}" data-month="${month.month}" data-config="${configKey}">⟲</span>` : '';
@@ -604,7 +606,7 @@ class SuperForecaster {
         return `
             <td class="sticky-col">${month.month}</td>
             ${createEditableCell('customers', customerBase)}
-            ${createEditableCell('contactRate', contactRate, { isPercent: true, step: '0.1' })}
+            ${createEditableCell('contactRate', contactRate, { isPercent: true, step: '0.01' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="estVolume">${forecast.estVolume.toLocaleString()}</td>
             ${createEditableCell('seasonalMultiplier', seasonalMultiplier, { step: '0.01' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="totalVolume">${forecast.totalVolume.toLocaleString()}</td>
