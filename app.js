@@ -465,7 +465,13 @@ class SuperForecaster {
                 const lockIcon = isLocked ? '🔒' : '🔓';
                 const lockToggle = this.isAdminMode() ? `<span class="column-lock-toggle" data-segment="${segmentKey}" data-config="${configKey}" title="Admin: Lock/Unlock this column">${lockIcon}</span>` : '';
                 const resetAllButton = !isLocked ? `<span class="reset-all-button" data-segment="${segmentKey}" data-config="${configKey}" title="Reset all monthly overrides for ${label}">⟲</span>` : '';
-                return `<th>${label} ${lockToggle} ${resetAllButton}</th>`;
+                
+                let finalLabel = label;
+                if (label.includes('AI Deflection') || label.includes('Chat Deflection') || label.includes('Improvement in Handle Time')) {
+                    finalLabel = `⚡️${label}`;
+                }
+
+                return `<th>${finalLabel} ${lockToggle} ${resetAllButton}</th>`;
             }
             return `<th>${label}</th>`;
         };
@@ -483,9 +489,9 @@ class SuperForecaster {
                                 ${createHeaderCell('Est. Volume')}
                                 ${createHeaderCell('Seasonal Multiplier', 'seasonalMultiplier')}
                                 ${createHeaderCell('Total Volume')}
-                                ${createHeaderCell('⚡️AI Deflection %', 'aiDeflection')}
+                                ${createHeaderCell('AI Deflection %', 'aiDeflection')}
                                 ${createHeaderCell('AI Deflected')}
-                                ${createHeaderCell('⚡️Chat Deflection %', 'chatDeflection')}
+                                ${createHeaderCell('Chat Deflection %', 'chatDeflection')}
                                 ${createHeaderCell('Chat Deflected')}
                                 ${createHeaderCell('Post-Deflection Volume')}
                                 ${createHeaderCell('TDCX Team Size', 'tdcxTeamSize')}
@@ -496,7 +502,7 @@ class SuperForecaster {
                                 ${createHeaderCell('Core Team Size', 'coreTeamSize')}
                                 ${createHeaderCell('Core Overtime', 'coreOvertime')}
                                 ${createHeaderCell('Core Tickets/Day', 'coreTicketsPerDay')}
-                                ${createHeaderCell('⚡️% Improvement in Handle Time', 'handleTimeImprovement')}
+                                ${createHeaderCell('% Improvement in Handle Time', 'handleTimeImprovement')}
                                 ${shiftHeader}
                                 ${createHeaderCell('Required FTEs')}
                                 ${createHeaderCell('Gap')}
@@ -604,10 +610,10 @@ class SuperForecaster {
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="totalVolume">${forecast.totalVolume.toLocaleString()}</td>
             ${createEditableCell('aiDeflection', aiDeflection, { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="aiDeflectedVolume">${forecast.aiDeflectedVolume.toLocaleString()}</td>
-            ${createEditableCell('⚡️Chat Deflection %', 'chatDeflection', { step: '0.1' })}
+            ${createEditableCell('chatDeflection', chatDeflection, { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="chatDeflectedVolume">${forecast.chatDeflectedVolume.toLocaleString()}</td>
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="postDeflectionVolume">${forecast.remainingVolume.toLocaleString()}</td>
-            ${createEditableCell('TDCX Team Size', 'tdcxTeamSize', { step: '0.1' })}
+            ${createEditableCell('tdcxTeamSize', tdcxTeamSize, { step: '0.1' })}
             ${createEditableCell('tdcxTicketsPerDay', tdcxTicketsPerDay, { step: '0.1' })}
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxVolume">${forecast.tdcxVolume.toLocaleString()}</td>
             <td data-segment="${segmentKey}" data-month="${month.month}" data-cell="tdcxPercentOfTotal" class="non-editable-cell">${forecast.tdcxPercentOfTotal}%</td>
