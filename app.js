@@ -118,6 +118,21 @@ class SuperForecaster {
                         
                         this.saveOverrides();
                         this.updateCalculations();
+
+                        // Apply visual feedback for the override in real-time
+                        e.target.classList.add('manual-override');
+                        const cellWrapper = e.target.parentElement;
+                        if (cellWrapper && cellWrapper.classList.contains('cell-wrapper')) {
+                            if (!cellWrapper.querySelector('.reset-button')) {
+                                const resetButton = document.createElement('span');
+                                resetButton.className = 'reset-button';
+                                resetButton.innerHTML = '⟲';
+                                resetButton.dataset.segment = segment;
+                                resetButton.dataset.month = month;
+                                resetButton.dataset.config = config;
+                                cellWrapper.appendChild(resetButton);
+                            }
+                        }
                     }
                 }
             });
