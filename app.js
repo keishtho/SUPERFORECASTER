@@ -454,9 +454,9 @@ class SuperForecaster {
 
         let shiftHeader = '';
         if (segmentKey === 'nonvip') {
-            shiftHeader = '<th>Shift to VIP</th>';
+            shiftHeader = `<th>Shift to VIP <span class="reset-all-button" data-segment="nonvip" data-config="shiftToVip" title="Reset all monthly overrides for Shift to VIP">⟲</span></th>`;
         } else if (segmentKey === 'vip') {
-            shiftHeader = '<th>Shift to Plus</th>';
+            shiftHeader = `<th>Shift to Plus <span class="reset-all-button" data-segment="vip" data-config="shiftToPlus" title="Reset all monthly overrides for Shift to Plus">⟲</span></th>`;
         } else {
             shiftHeader = '<th></th>'; // Empty header for Plus segment
         }
@@ -547,10 +547,24 @@ class SuperForecaster {
         let shiftInput = '';
         if (segmentKey === 'nonvip') {
             const shiftToVip = this.getConfigValue(segmentKey, month, 'shiftToVip') || 0;
-            shiftInput = `<td><input type="number" value="${shiftToVip}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToVip" step="1" min="0" ${isRowLocked ? 'readonly' : ''}></td>`;
+            const resetButton = shiftToVip !== 0 && !isRowLocked ? `<span class="reset-button" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToVip">⟲</span>` : '';
+            shiftInput = `
+                <td>
+                    <div class="cell-wrapper">
+                        <input type="number" value="${shiftToVip}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToVip" step="1" min="0" ${isRowLocked ? 'readonly' : ''}>
+                        ${resetButton}
+                    </div>
+                </td>`;
         } else if (segmentKey === 'vip') {
             const shiftToPlus = this.getConfigValue(segmentKey, month, 'shiftToPlus') || 0;
-            shiftInput = `<td><input type="number" value="${shiftToPlus}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToPlus" step="1" min="0" ${isRowLocked ? 'readonly' : ''}></td>`;
+            const resetButton = shiftToPlus !== 0 && !isRowLocked ? `<span class="reset-button" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToPlus">⟲</span>` : '';
+            shiftInput = `
+                <td>
+                    <div class="cell-wrapper">
+                        <input type="number" value="${shiftToPlus}" data-segment="${segmentKey}" data-month="${month.month}" data-config="shiftToPlus" step="1" min="0" ${isRowLocked ? 'readonly' : ''}>
+                        ${resetButton}
+                    </div>
+                </td>`;
         } else {
             shiftInput = '<td></td>'; // Empty cell for Plus segment
         }
